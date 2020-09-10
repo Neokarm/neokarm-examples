@@ -12,4 +12,3 @@ provider "aws" {
   # No importance for this value currently
   region = "us-east-1"
 }
-
