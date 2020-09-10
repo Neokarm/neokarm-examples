@@ -7,6 +7,15 @@ resource "aws_vpc" "vpc" {
   }
 }
 
+resource "aws_vpc_dhcp_options" "dns_resolver" {
+  domain_name_servers = ["8.8.8.8", "8.8.4.4"]
+}
+
+resource "aws_vpc_dhcp_options_association" "dns_resolver" {
+  vpc_id          = "${aws_vpc.vpc.id}"
+  dhcp_options_id = "${aws_vpc_dhcp_options.dns_resolver.id}"
+}
+
 resource "aws_subnet" "subnet" {
   cidr_block = "192.168.10.0/24"
   vpc_id     = "${aws_vpc.vpc.id}"
@@ -47,6 +56,10 @@ resource "aws_security_group" "allow_all" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
+
+##
+### Create a simple network infrastracture with an instance
+##
 
 resource "aws_instance" "instance" {
   ami                    = var.ami_image
