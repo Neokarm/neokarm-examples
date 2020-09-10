@@ -3,5 +3,5 @@ variable "symphony_ip" {
 }
 
 variable "ami_image" {
-  description = "Image ID"
+  description = "Instance image ID"
 }

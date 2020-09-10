@@ -1,3 +1,8 @@
+
+##
+### Create a simple S3 bucket with key
+##
+
 resource "aws_s3_bucket" "bucket" {
   bucket = "${var.bucket_name}"
   acl    = "private"
