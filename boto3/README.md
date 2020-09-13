@@ -3,7 +3,6 @@
 ## Welcome!
 This repository aims to give examples to some of the common AWS Python SDK use cases Neokarm supports:
 - EC2
-- S3
 - RDS
 - ELB v2
 
@@ -21,6 +20,4 @@ Currently supported service apis include:
 3. Please mark configuration variables with `<>`
 
 ## Examples:
-* `access_key = "<key>"`
-* `secret_key = "<secret>"`
 * `endpoint_url = "https://<symphony-region-ip>/api/v2/ec2/"`
