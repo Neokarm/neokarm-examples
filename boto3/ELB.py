@@ -4,32 +4,32 @@ import random
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
----------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 
-    # This script shows and example of Boto3 ELB v2 integration with Neokarm Symphony.
+#     This script shows and example of Boto3 ELB v2 integration with Neokarm Symphony.
 
-    # The scenario:
-    #      1. Create VPC
-    #      2. Create Internet-Gateway
-    #      3. Attach Internet-Gateway
-    #      4. Create public Subnet
-    #      5. Create private Subnet
-    #      6. Create Route-Table
-    #      7. Create Route
-    #      8. Associate Route-Table to  the public Subnet
-    #      9. Create instance Security-Group
-    #      10. Create load balancer Security-Group
-    #      11. Run target instances
-    #      12. Create load-balancer
-    #      13. Create target-group
-    #      14. Register instances to target-group
-    #      15. Create Listener
+#     The scenario:
+#          1. Create VPC
+#          2. Create Internet-Gateway
+#          3. Attach Internet-Gateway
+#          4. Create public Subnet
+#          5. Create private Subnet
+#          6. Create Route-Table
+#          7. Create Route
+#          8. Associate Route-Table to  the public Subnet
+#          9. Create instance Security-Group
+#          10. Create load balancer Security-Group
+#          11. Run target instances
+#          12. Create load-balancer
+#          13. Create target-group
+#          14. Register instances to target-group
+#          15. Create Listener
     
-    # This example was tested on versions:
-    # - Symphony version 5.5.3
-    # - boto3 1.4.7
+#     This example was tested on versions:
+#     - Symphony version 5.5.3
+#     - boto3 1.4.7
 
----------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 
 
 def main():
