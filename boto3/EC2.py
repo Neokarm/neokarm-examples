@@ -3,20 +3,20 @@ import sys
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
---------------------------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------------
 
-    # This script shows and example of Boto3 integration with Stratoscale Symphony.
+#     This script shows and example of Boto3 integration with Stratoscale Symphony.
 
-    # The scenario is as such:
-    #     1. Instantiate an instance from an AMI
-    #     2. Create a volume
-    #     3. Attach the volume to the created AMI
+#     The scenario is as such:
+#         1. Instantiate an instance from an AMI
+#         2. Create a volume
+#         3. Attach the volume to the created AMI
 
-    # This example was tested on versions:
-    # - Symphony version 5.5.3
-    # - boto3 1.4.7
+#     This example was tested on versions:
+#     - Symphony version 5.5.3
+#     - boto3 1.4.7
 
----------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 
 
 # Replace following parameters with your IP and credentials
