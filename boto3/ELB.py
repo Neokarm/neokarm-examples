@@ -1,47 +1,51 @@
 import boto3
-import json
 import sys
-import jq
 import random
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+---------------------------------------------------------------------------------------------------------------------
+
+    # This script shows and example of Boto3 ELB v2 integration with Neokarm Symphony.
+
+    # The scenario:
+    #      1. Create VPC
+    #      2. Create Internet-Gateway
+    #      3. Attach Internet-Gateway
+    #      4. Create public Subnet
+    #      5. Create private Subnet
+    #      6. Create Route-Table
+    #      7. Create Route
+    #      8. Associate Route-Table to  the public Subnet
+    #      9. Create instance Security-Group
+    #      10. Create load balancer Security-Group
+    #      11. Run target instances
+    #      12. Create load-balancer
+    #      13. Create target-group
+    #      14. Register instances to target-group
+    #      15. Create Listener
+    
+    # This example was tested on versions:
+    # - Symphony version 5.5.3
+    # - boto3 1.4.7
+
+---------------------------------------------------------------------------------------------------------------------
+
+
 def main():
 
     # Parameters
-    CLUSTER_IP = '10.16.128.10'
+    CLUSTER_IP = 'API endpoint IP'
     VPC_CIDR = '172.20.0.0/16'
     PUBLIC_SUBNET_CIDR = '172.20.10.0/24'
     PRIVATE_SUBNET_CIDR = '172.20.20.0/24'
     INTERNAL_PORT = 8080
     EXTERNAL_PORT = 80
     TARGETS_COUNT = 2
-    IMAGE_ID = '< IMAGE ID>'
+    IMAGE_ID = '<IMAGE ID>'
     INSTANCE_TYPE = 't2.medium'
 
-    """
-    This script shows and example of Boto3 ELB v2 integration with Neokarm Symphony.
-
-    The scenario:
-         1. Create VPC
-         2. Create Internet-Gateway
-         3. Attach Internet-Gateway
-         4. Create public Subnet
-         5. Create private Subnet
-         6. Create Route-Table
-         7. Create Route
-         8. Associate Route-Table to  the public Subnet
-         9. Create instance Security-Group
-         10. Create load balancer Security-Group
-         11. Run target instances
-         12. Create load-balancer
-         13. Create target-group
-         14. Register instances to target-group
-         15. Create Listener
     
-    This example was tested on versions:
-    - boto3 1.4.7
-    """
 
     # The following will be used to differentiate entity names in this example
     run_index = '%03x' % random.randrange(2**12)
@@ -299,7 +303,6 @@ def main():
         )
 
     instance_ids = list(map(lambda i: i['InstanceId'], run_instances['Instances']))
-    # [str(item) for item in jq.all('.Instances[].InstanceId', run_instances)]
 
     waiter = ec2.get_waiter('instance_running')
     waiter.wait(InstanceIds=instance_ids)
