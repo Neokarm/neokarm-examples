@@ -10,7 +10,7 @@ Create programmatic access keys:
 
 * Log in to the cluster with the relevant user
 
-* Generate new access keys: **Menu** > **Account Management**> **Access Keys** > **Create**
+* Generate new access keys: **Menu** > **Account Management** > **Access Keys** > **Create**
 
 * update the aws default credentials
 
