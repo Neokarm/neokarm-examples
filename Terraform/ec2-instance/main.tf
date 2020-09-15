@@ -20,7 +20,8 @@ resource "aws_vpc" "vpc" {
   enable_dns_support = false
 
   tags = {
-    Name = "terraform"
+    Name      = "Sample VPC",
+    CreatedBy = "Terraform"
   }
 }
 
@@ -36,8 +37,10 @@ resource "aws_vpc_dhcp_options_association" "dns_resolver" {
 resource "aws_subnet" "subnet" {
   cidr_block = "192.168.10.0/24"
   vpc_id     = "${aws_vpc.vpc.id}"
+
   tags = {
-    Name = "terraform"
+    Name      = "Sample Subnet",
+    CreatedBy = "Terraform"
   }
 }
 
@@ -81,7 +84,8 @@ resource "aws_instance" "instance" {
   vpc_security_group_ids = ["${aws_security_group.allow_all.id}"]
 
   tags = {
-    Name = "terraform"
+    Name      = "Sample instance",
+    CreatedBy = "Terraform"
   }
 }
 

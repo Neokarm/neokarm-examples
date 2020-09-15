@@ -31,7 +31,8 @@ resource "aws_subnet" "public_subnet" {
   vpc_id     = aws_vpc.vpc.id
 
   tags = {
-    Name = "Sample public subnet"
+    Name      = "Sample public subnet",
+    CreatedBy = "Terraform"
   }
 }
 
@@ -40,7 +41,8 @@ resource "aws_subnet" "private_subnet" {
   vpc_id     = aws_vpc.vpc.id
 
   tags = {
-    Name = "Sample private subnet"
+    Name      = "Sample private subnet",
+    CreatedBy = "Terraform"
   }
 }
 
@@ -48,7 +50,8 @@ resource "aws_vpc_dhcp_options" "dns_resolver" {
   domain_name_servers = ["8.8.8.8", "8.8.4.4"]
 
   tags = {
-    Name = "Sample DNS resolvers"
+    Name      = "Sample DNS resolvers",
+    CreatedBy = "Terraform"
   }
 }
 
@@ -70,7 +73,8 @@ resource "aws_route_table" "public" {
   }
 
   tags = {
-    Name = "Smaple public RoutTable"
+    Name      = "Smaple public RoutTable",
+    CreatedBy = "Terraform"
   }
 }
 
@@ -79,7 +83,6 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
-# Creating two instances of web server ami with cloudinit
 resource "aws_instance" "nginx" {
   count = var.quantity
 
@@ -99,7 +102,8 @@ resource "aws_instance" "nginx" {
 
 
   tags = {
-    Name = "Sample Nginx"
+    Name      = "Sample Nginx",
+    CreatedBy = "Terraform"
   }
 }
 
@@ -107,7 +111,6 @@ resource "aws_security_group" "nginx" {
   name   = "instance-sg"
   vpc_id = aws_vpc.vpc.id
 
-  # Internal HTTP access from anywhere
   ingress {
     from_port       = 80
     to_port         = 80
@@ -127,7 +130,6 @@ resource "aws_security_group" "elb" {
   name   = "elb-sg"
   vpc_id = aws_vpc.vpc.id
 
-  # HTTP access from anywhere
   ingress {
     from_port   = 80
     to_port     = 80
@@ -151,7 +153,8 @@ resource "aws_alb" "alb" {
   security_groups    = [aws_security_group.elb.id]
 
   tags = {
-    Name = "smaple-load-balancer"
+    Name      = "smaple-load-balancer",
+    CreatedBy = "Terraform"
   }
 }
 
@@ -173,7 +176,7 @@ resource "aws_alb_listener" "list" {
   load_balancer_arn = aws_alb.alb.arn
   port              = "80"
   protocol          = "HTTP"
-  
+
   default_action {
     target_group_arn = aws_alb_target_group.instances.arn
     type             = "forward"
