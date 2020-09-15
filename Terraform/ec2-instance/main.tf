@@ -1,3 +1,20 @@
+
+# ---------------------------------------------------------------------------------------------------------------------
+#     This module creates the following resources:
+#          * VPC
+#          * Subnet
+#          * DHCP options
+#          * Internet gateway
+#          * Routing table route in default routing table
+#          * Security group
+#          * Instance
+#          * Elastic IP
+#  
+#     This example was tested on versions:
+#     - Symphony version 5.5.3
+#     - terraform 0.12.27
+# ---------------------------------------------------------------------------------------------------------------------
+
 resource "aws_vpc" "vpc" {
   cidr_block         = "192.168.0.0/16"
   enable_dns_support = false
@@ -56,10 +73,6 @@ resource "aws_security_group" "allow_all" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
-
-##
-### Create a simple network infrastracture with an instance
-##
 
 resource "aws_instance" "instance" {
   ami                    = var.ami_image
