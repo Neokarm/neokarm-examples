@@ -1,7 +1,7 @@
 
 # ---------------------------------------------------------------------------------------------------------------------
 #     This module creates the following resources:
-#          * Security groups
+#          * Security group
 #          * Key pair
 #          * Instance (Packer host)
 #          * Elastic IP
