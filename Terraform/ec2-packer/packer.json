@@ -1,0 +1,47 @@
+{
+  "variables": {
+      "symphony_ip": "",
+      "aws_access_key": "",
+      "aws_secret_key": "",
+      "region": "us-east-1",
+      "vpc_id": "",
+      "subnet_id": "",
+      "ami_name": "",
+      "instance_type": "",
+      "ssh_username": ""
+
+
+  },
+  "builders": [
+    {
+      "type": "amazon-ebs",
+      "custom_endpoint_ec2": "https://{{user `symphony_ip`}}/api/v2/aws/ec2",
+      "access_key": "{{user `aws_access_key`}}",
+      "secret_key": "{{user `aws_secret_key`}}",
+      "region": "{{user `region`}}",
+      "skip_region_validation": true,
+      "insecure_skip_tls_verify": true,
+      "vpc_id": "{{user `vpc_id`}}",
+      "subnet_id": "{{user `subnet_id`}}",
+      "ami_name": "packer-centos-demo-{{timestamp}}",
+      "instance_type": "{{user `instance_type`}}",
+      "source_ami_filter": {
+        "owners": "self",
+        "filters": {
+          "name": "{{user `ami_name`}}"
+        },
+        "most_recent": true
+      },
+      "ssh_username": "{{user `ssh_username`}}"
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "shell",
+      "inline": [
+          "sudo yum update -y",
+          "sudo yum install -y docker httpd"
+      ]
+    }
+  ]
+}
