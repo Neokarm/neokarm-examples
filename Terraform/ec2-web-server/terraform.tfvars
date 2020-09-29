@@ -1,0 +1,6 @@
+ubuntu_ami = "ami-858c4d1a2e4c4139824db7148c05d1bc"
+access_key ="bdd186038381477c8e7d81f3390a7f45"
+secret_key = "c48fae294b14425aa75de75d7b286134"
+symphony_ip = "10.16.145.148"
+key_name = "key1"
+sg_web_servers = "default"
