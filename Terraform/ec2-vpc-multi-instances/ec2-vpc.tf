@@ -1,7 +1,7 @@
 # Creating a VPC & Networking
 resource "aws_vpc" "myapp_vpc" {
   cidr_block = "192.168.0.0/16"
-  enable_dns_support = false
+  enable_dns_support = true
 
   tags = {
     Name = "Demo VPC"
@@ -13,31 +13,31 @@ resource "aws_vpc_dhcp_options" "dns_resolver" {
 }
 
 resource "aws_vpc_dhcp_options_association" "dns_resolver" {
-  vpc_id          = "${aws_vpc.myapp_vpc.id}"
-  dhcp_options_id = "${aws_vpc_dhcp_options.dns_resolver.id}"
+  vpc_id          = aws_vpc.myapp_vpc.id
+  dhcp_options_id = aws_vpc_dhcp_options.dns_resolver.id
 }
 resource "aws_subnet" "myapp_subnet"{
     cidr_block = "192.168.10.0/24"
-    vpc_id = "${aws_vpc.myapp_vpc.id}"
+    vpc_id = aws_vpc.myapp_vpc.id
     tags = {
       Name = "Demo subnet"
     }
 
-    # Makes sure DHCP configuration is absorbed in the subnet - Symphony specific
+# Makes sure DHCP configuration is absorbed in the subnet - Symphony specific
     depends_on = ["aws_vpc_dhcp_options_association.dns_resolver"]
 }
 
 resource "aws_internet_gateway" "myapp_gw" {
-  vpc_id = "${aws_vpc.myapp_vpc.id}"
+  vpc_id = aws_vpc.myapp_vpc.id
 }
 
 # The default route table will allow each subnet to route to the Internet Gateway
 resource "aws_default_route_table" "default" {
-    default_route_table_id = "${aws_vpc.myapp_vpc.default_route_table_id}"
+    default_route_table_id = aws_vpc.myapp_vpc.default_route_table_id
 
     route {
         cidr_block = "0.0.0.0/0"
-        gateway_id = "${aws_internet_gateway.myapp_gw.id}"
+        gateway_id = aws_internet_gateway.myapp_gw.id
     }
 }
 
@@ -46,23 +46,23 @@ resource "aws_default_route_table" "default" {
 
 # Creating an instance
 resource "aws_instance" "myapp_instance" {
-    ami = "${var.ami_image}"
-    instance_type = "${var.instance_type}"
-    subnet_id = "${aws_subnet.myapp_subnet.id}"
-    vpc_security_group_ids = ["${aws_security_group.allow_all.id}"]
-    count = "${var.instance_number}"
+    ami = var.ami_image
+    instance_type = var.instance_type
+    subnet_id = aws_subnet.myapp_subnet.id
+    vpc_security_group_ids = [aws_security_group.allow_all.id]
+    count = var.instance_number
     tags = {
         Name="my_instance_${count.index}"
     }
 }
 
 resource "aws_eip" "myapp_instance_eip" {
-  count = "${var.instance_number}"
+  count = var.instance_number
   depends_on = ["aws_internet_gateway.myapp_gw"]
 }
 
 resource "aws_eip_association" "myapp_eip_assoc" {
-  count = "${var.instance_number}"
+  count = var.instance_number
   instance_id = "${element(aws_instance.myapp_instance.*.id, count.index)}"
   allocation_id = "${element(aws_eip.myapp_instance_eip.*.id, count.index)}"
 }
@@ -73,7 +73,7 @@ resource "aws_eip_association" "myapp_eip_assoc" {
 resource "aws_security_group" "allow_all" {
   name        = "allow_all"
   description = "Allow all traffic"
-  vpc_id      = "${aws_vpc.myapp_vpc.id}"
+  vpc_id      = aws_vpc.myapp_vpc.id
 
   ingress {
     protocol    = "tcp"

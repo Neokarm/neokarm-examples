@@ -7,7 +7,7 @@ This TF script will deploy a single region highly available WordPress site with 
 
 ## Before you begin: Create SSH Key-Pairs
 
-ssh-keygen -f <path to key file and name prefix> -t rsa -b 2048
+ssh-keygen -f <path to key file> -t rsa -b 2048
 Two files will be created:
  - no suffix file - the private key
  - .pub suffix - the public key. This is the file you pass in tfvars

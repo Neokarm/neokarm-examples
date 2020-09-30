@@ -1,18 +1,18 @@
 # .tfvars Sample File
 
-# Region Credentials 
 
-symphony_ip = "10.16.145.116"
-access_key = "f2c44138c9a445dc8803b38f8bffd23a"
-secret_key = "aae4c4f93d95462d8bf2678240a8e1f0"
+# Region Credentials
+symphony_ip = "<symphony_ip>"
+access_key = "<access_key>"
+secret_key = "<secret_key>"
 
+# Recommended use of Xenial's latest cloud image
+# located here: https://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img 
 
-# Image AMI ID 
-# This can be a CentOS or RHEL 7 image you built yourself
-# with cloudinit, and cloud-utils-growpart installed
-
-ami_image = "ami-9384fe114c974cfcb7eabcbd84622c33"
+instance_image = "<aws_ami>"
+public_keypair_path = "<path to key>"
 
 # optional
 # instance_type = "<instance-type>"
 # instance_number = <number of instances>
+

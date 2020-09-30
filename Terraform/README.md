@@ -2,8 +2,7 @@
 
 These examples show you how to use the Terraform AWS provider with Neokarm Symphony.
 
-## !! Please notice some examples were converted to terraform 0.12 syntax!!
-## All examples tested with provider.aws v2.13.0!
+## All examples tested with provider.aws v2.31.0 terraform v0.12!
 
 ## Before you begin
 

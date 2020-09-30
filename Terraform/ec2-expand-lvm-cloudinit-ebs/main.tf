@@ -19,7 +19,7 @@ data "template_cloudinit_config" "ebsdeploy_config" {
 
 
 resource "aws_instance" "ec2_instance" {
-    ami = var.ami_image
+    ami = var.instance_image
 
     tags ={
         Name="instance${count.index}"
