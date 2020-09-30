@@ -19,3 +19,12 @@ resource "aws_instance" "web" {
   # this should be on port 80
   user_data = "${file("userdata.sh")}"
 }
+
+resource "aws_eip" "private_ip" {
+  count = 3  
+  instance = "${aws_instance.web[count.index].id}"
+  vpc      = true
+}
+
+
+

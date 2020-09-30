@@ -4,7 +4,7 @@ apt-get update -y
 apt-get install -y nginx > /tmp/nginx.log
 
 
-#WEBSRV=$(curl http://169.254.169.254/latest/meta-data/instance-id)
+WEBSRV=$(wget -q -O - http://169.254.169.254/latest/meta-data/instance-id)
 cat <<EOM > /var/www/html/index.nginx-debian.html
 <html>
 <head>

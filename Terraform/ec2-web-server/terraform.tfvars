@@ -1,6 +1,16 @@
-ubuntu_ami = "ami-858c4d1a2e4c4139824db7148c05d1bc"
-access_key ="bdd186038381477c8e7d81f3390a7f45"
-secret_key = "c48fae294b14425aa75de75d7b286134"
-symphony_ip = "10.16.145.148"
-key_name = "key1"
+# .tfvars Sample File
+
+# Region Credentials
+symphony_ip = <>
+access_key = <>
+secret_key = <>
+
+# use ubuntu image id
+# you can upload from here https://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img
+ubuntu_ami = <ubuntu image>
+
+# upload key to neokarm system and insert here his name
+key_name = <key name>
+
+# security group name as in neokarm system
 sg_web_servers = "default"
