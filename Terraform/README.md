@@ -55,8 +55,6 @@ Each Terraform example includes a sample `terraform.tfvars` file that you can us
 
 ## How to use
 
-1. Get the most recent version of Terraform.
+1. Run `terraform init`.
 
-2. Run `terraform init`.
-
-3. Run `terraform apply`.
+2. Run `terraform apply`.
