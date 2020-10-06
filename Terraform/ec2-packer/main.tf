@@ -63,8 +63,8 @@ data "aws_ami" "image" {
 }
 
 resource "aws_key_pair" "packer" {
-  key_name_prefix   = "packer-example"
-  public_key = file("${path.module}/${var.public_key}")
+  key_name_prefix = "packer-example"
+  public_key      = file("${path.module}/${var.public_key}")
 }
 
 
@@ -92,7 +92,7 @@ resource "aws_eip_association" "eip_assoc" {
 resource "null_resource" "ssh_connection" {
 
   connection {
-    host        = aws_eip.eip.private_ip
+    host        = aws_eip.eip.public_ip
     type        = "ssh"
     private_key = file("${path.module}/${var.private_key}")
     port        = 22

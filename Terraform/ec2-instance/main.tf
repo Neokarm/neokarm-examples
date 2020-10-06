@@ -15,52 +15,25 @@
 #     - terraform 0.12.27
 # ---------------------------------------------------------------------------------------------------------------------
 
-resource "aws_vpc" "vpc" {
-  cidr_block         = "192.168.0.0/16"
-  enable_dns_support = false
+resource "aws_default_vpc" "default" {
 
   tags = {
-    Name      = "Sample VPC",
-    CreatedBy = "Terraform"
+    Name = "Default VPC"
   }
 }
 
-resource "aws_vpc_dhcp_options" "dns_resolver" {
-  domain_name_servers = ["8.8.8.8", "8.8.4.4"]
-}
-
-resource "aws_vpc_dhcp_options_association" "dns_resolver" {
-  vpc_id          = "${aws_vpc.vpc.id}"
-  dhcp_options_id = "${aws_vpc_dhcp_options.dns_resolver.id}"
-}
-
-resource "aws_subnet" "subnet" {
-  cidr_block = "192.168.10.0/24"
-  vpc_id     = "${aws_vpc.vpc.id}"
+resource "aws_default_subnet" "default" {
+  availability_zone = "symphony"
 
   tags = {
-    Name      = "Sample Subnet",
-    CreatedBy = "Terraform"
-  }
-}
-
-resource "aws_internet_gateway" "igw" {
-  vpc_id = "${aws_vpc.vpc.id}"
-}
-
-resource "aws_default_route_table" "default" {
-  default_route_table_id = "${aws_vpc.vpc.default_route_table_id}"
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = "${aws_internet_gateway.igw.id}"
+    Name = "Default subnet"
   }
 }
 
 resource "aws_security_group" "allow_all" {
   name        = "allow_all"
   description = "Allow all traffic"
-  vpc_id      = "${aws_vpc.vpc.id}"
+  vpc_id      = aws_default_vpc.default.id
 
   ingress {
     from_port   = 0
@@ -77,11 +50,22 @@ resource "aws_security_group" "allow_all" {
   }
 }
 
+data "aws_ami" "ami_image" {
+  filter {
+    name   = "name"
+    values = [var.image_name]
+  }
+
+  owners = ["self"]
+}
+
 resource "aws_instance" "instance" {
-  ami                    = var.ami_image
+  count = 5
+
+  ami                    = data.aws_ami.ami_image.id
   instance_type          = "t2.micro"
-  subnet_id              = "${aws_subnet.subnet.id}"
-  vpc_security_group_ids = ["${aws_security_group.allow_all.id}"]
+  subnet_id              = aws_default_subnet.default.id
+  vpc_security_group_ids = [aws_security_group.allow_all.id]
 
   tags = {
     Name      = "Sample instance",
@@ -90,6 +74,8 @@ resource "aws_instance" "instance" {
 }
 
 resource "aws_eip" "eip" {
-  instance = "${aws_instance.instance.id}"
+  count = 5
+
+  instance = element(aws_instance.instance.*.id, count.index)
   vpc      = true
 }

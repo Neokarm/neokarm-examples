@@ -4,15 +4,7 @@ These examples show you how to use the Terraform AWS provider with Neokarm Clust
 
 > **important!** all the following examples wrote for terraform v0.12 with aws provider v2.13.0
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 ## Before you begin
-=======
-### Before you begin: Symphony setup tasks
->>>>>>> 3819a08... lint
-=======
-## Before you begin
->>>>>>> ca52069... lint
 
 Create programmatic access keys:
 

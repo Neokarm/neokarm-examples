@@ -40,7 +40,8 @@
       "type": "shell",
       "inline": [
           "sudo yum update -y",
-          "sudo yum install -y docker httpd"
+          "sudo yum install -y docker httpd",
+          "sudo systemctl enable httpd"
       ]
     }
   ]
