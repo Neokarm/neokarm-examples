@@ -21,14 +21,11 @@ Before you can use these Terraform examples, you need to do the following tasks 
 
 1. Log in to the Symphony GUI as a user whose account role is either Admin or Tenant Admin.
 
-   Here is [additional information about user roles](https://www.stratoscale.com/docs/working-with-users/)
-
 2. Then create a **dedicated VPC-enabled project** for use with Terraform:
 
     **Menu** > **Account Management** > **Accounts** > select an account > **Create Project** > **Enable VPC** > select existing Symphony edge network for this project.
 
-    Here is [additional information about using VPC-enabled projects](https://www.stratoscale.com/docs/using-a-vpc-enabled-project/).
-    
+   
 3. **Create a user** that is associated the the project you just created:
 
     **Menu** > **Account Management** > **Accounts** > select an account > **Users** > **Create User**
