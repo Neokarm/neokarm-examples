@@ -1,23 +1,50 @@
-# Symphony AWS Python SDK Integration Examples
+# boto3 Examples
 
-## Welcome!
-This repository aims to give examples to some of the common AWS Python SDK use cases Neokarm supports:
-- EC2
-- RDS
-- ELB v2
+These examples show you how to use the boto3 module in python with Neokarm Clusters.
 
-The examples will help you get started with AWS Python SDK against Neokarm Symphony.
+> **important!** All the following examples tested using python 2.7 with boto3 v1.4.7
 
-## General Information
-Currently supported service apis include:
-1. EC2 APIs at `https://<region ip>/api/v2/ec2/`
-2. RDS APIs at `https://<region ip>/api/v2/aws/rds`
-3. ELB APIs at `https://<region ip>/api/v2/aws/elb`
+## Important to know
 
-## Submittion Rules:
-1. Submit working examples only
-2. If your example doesn't work yet or WIP, please mention it in a simple `README.md`
-3. Please mark configuration variables with `<>`
+In order to create a boto3 client to manage the resources in the cluster, the client must have a custom endpoint url per service.
 
-## Examples:
-* `endpoint_url = "https://<symphony-region-ip>/api/v2/ec2/"`
+For example:
+
+```
+# Update the cluster API DNS/IP
+CLUSTER_API = '<Cluster API DNS/IP>'
+
+# Create session client
+ec2 = boto3.Session.client(
+        boto3.session.Session(),
+        service_name="ec2",
+        region_name="symphony",
+        endpoint_url="https://%s/api/v2/aws/ec2/" % CLUSTER_API,
+        verify=False
+        )
+```
+
+All the available enpoints can be seen in the the cluster : **Help** > **API Endpoints**
+
+## Before you begin
+
+Create programmatic access keys:
+
+* Log in to the cluster with the relevant user
+
+* Generate new access keys: **Menu** > **Account Management** > **Access Keys** > **Create**
+
+* update the aws default credentials
+
+    ```
+    aws configure set aws_access_key_id <access_key_id>
+    aws configure set aws_secret_access_key <secret_access_key>
+    ```
+> For load balancing examples: **Ensure that the load balancer service in your cluster is initialized**
+
+## How to use
+
+Execute the relevant file
+```
+python ./example.py
+```
