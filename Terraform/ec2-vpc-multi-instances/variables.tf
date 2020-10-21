@@ -1,7 +1,8 @@
 # Region Credentials
 variable "symphony_ip" {}
-variable "secret_key" {}
-variable "access_key" {}
+#when providing public and secret keys as variables delete ladders
+#variable "secret_key" {}
+#variable "access_key" {}
 
 # Main variables
 variable "ami_image" {}
