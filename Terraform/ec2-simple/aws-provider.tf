@@ -1,7 +1,7 @@
 provider "aws" {
   access_key = var.access_key
   secret_key = var.secret_key
-
+# shared_credentials_file = var.credentials_file
   endpoints {
     ec2 = "https://${var.symphony_ip}/api/v2/aws/ec2"
   }

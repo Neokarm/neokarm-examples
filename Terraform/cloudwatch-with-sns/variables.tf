@@ -2,7 +2,7 @@ variable "secret_key" {}
 variable "access_key" {}
 variable "symphony_ip" {}
 variable "aws_ami" {}
-
+# variable "credentials_file" {}
 variable "instance_count" {
   default = 1
 }

@@ -3,7 +3,7 @@ variable "symphony_ip" {
 }
 variable "secret_key" {}
 variable "access_key" {}
-
+#variable "creds_file" {}
 variable "ami_image" {
   description = "Instance image ID"
 }

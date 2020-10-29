@@ -37,12 +37,19 @@ resource "aws_cloudwatch_metric_alarm" "bat" {
   alarm_description	   	= "This metric monitors insufficient data on ${element(aws_instance.myapp_instance.*.id, count.index)}"
   insufficient_data_actions     = ["${aws_sns_topic.topic_name.*.arn[0]}", "${aws_sns_topic.topic_name.*.arn[1]}"]
   ok_actions                    = ["${aws_sns_topic.topic_name.*.arn[0]}", "${aws_sns_topic.topic_name.*.arn[1]}"]
+  #alarm_actions                  = ["${aws_sns_topic.topic_name.*.arn[0]}"]    
 }
 
 
 resource "null_resource" "subscribe" {
   count = 2
+   triggers = {
+      topics = "${element(aws_sns_topic.topic_name.*.arn, count.index)}"
+      ak = var.access_key
+      sk = var.secret_key
+      ip = var.symphony_ip
 
+}
   provisioner "local-exec" {
     command = "python subscribe.py ${element(aws_sns_topic.topic_name.*.arn, count.index)} ${var.access_key} ${var.secret_key} ${var.symphony_ip}"
     working_dir = "./boto/"
@@ -50,7 +57,8 @@ resource "null_resource" "subscribe" {
 
   provisioner "local-exec" {
     when = "destroy"
-    command = "python unsubscribe.py ${element(aws_sns_topic.topic_name.*.arn, count.index)} ${var.access_key} ${var.secret_key} ${var.symphony_ip}"
-    working_dir = "./boto/"
+        command = "python unsubscribe.py '${self.triggers.topics}' '${self.triggers.ak}' '${self.triggers.sk}' '${self.triggers.ip}'"
+    
+working_dir = "./boto/"
   }
 }

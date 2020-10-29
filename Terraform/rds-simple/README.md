@@ -1,4 +1,5 @@
 # RDS Simple Example
+## This example tested in aws provider version v2.13.0!
 This example demonstrates creating an RDS instance using terraform, it will create an instance  
 and assign it with a custom parameters group with modified parameters.
 

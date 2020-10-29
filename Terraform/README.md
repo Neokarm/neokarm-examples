@@ -2,8 +2,7 @@
 
 These examples show you how to use the Terraform AWS provider with Neokarm Symphony.
 
-## All examples tested with provider.aws v2.31.0 terraform v0.12!
-
+## All examples tested with provider.aws v3.0.0 terraform v0.12 and v0.13!
 ## Before you begin
 
 Before you can use these Terraform examples, you need to:
@@ -50,6 +49,13 @@ Before you can use these Terraform examples, you need to do the following tasks 
 
 Each Terraform example includes a sample `terraform.tfvars` file that you can use as a template. For each variable, fill in your environment-specific value.
 
+Access keys can be provided as variables or as path to credentials file.
+Example of credentials file:
+```
+[default]
+aws_access_key_id=AKIAIOSFODNN7EXAMPLE
+aws_secret_access_key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+```
 ## How to use
 
 1. Run `terraform init`.

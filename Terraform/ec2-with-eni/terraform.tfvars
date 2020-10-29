@@ -1,9 +1,12 @@
 # .tfvars Sample File
 
 
-# Region Credesymphony_ip = "10.16.146.5"
+# Region Creds
 symphony_ip = "<symphony_ip>"
-secret_key = "<secret_key>"
+# access_key = "<access_key>"
+# secret_key = "<secret_key>"
 
-aws_ami = "<instance-image>"
+credentials_file = "<path_to_creds_file>" # example:"/$HOME/.aws/credentials"
+
+aws_ami = "<image_id>"
 

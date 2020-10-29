@@ -1,8 +1,8 @@
 provider "aws" {
   access_key = var.access_key
   secret_key = var.secret_key
-
-  endpoints {
+# shared_credentials_file = var.creds_file
+endpoints {
     elb = "https://${var.symphony_ip}/api/v2/aws/elb"
     ec2 = "https://${var.symphony_ip}/api/v2/aws/ec2"
   }
@@ -13,7 +13,7 @@ provider "aws" {
   skip_requesting_account_id  = true
 
   # Pinning AWS plugin version
-  version = "=2.31.0"
+  version = "=3.0.0"
 
   # No importance for this value currently
   region = "us-east-1"

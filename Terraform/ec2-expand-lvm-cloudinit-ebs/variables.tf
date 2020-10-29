@@ -2,6 +2,7 @@
 variable "symphony_ip" {}
 variable "secret_key" {}
 variable "access_key" {}
+# variable "credentials_file" {}
 variable "instance_image" {}
 variable "instance_number" {
   default = 1

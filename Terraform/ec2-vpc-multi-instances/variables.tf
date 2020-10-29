@@ -3,7 +3,7 @@ variable "symphony_ip" {}
 #when providing public and secret keys as variables delete ladders
 #variable "secret_key" {}
 #variable "access_key" {}
-
+variable "credentials_file" {}
 # Main variables
 variable "ami_image" {}
 variable "instance_number" {

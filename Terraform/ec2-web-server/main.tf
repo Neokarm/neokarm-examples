@@ -20,7 +20,7 @@ resource "aws_instance" "web" {
   user_data = "${file("userdata.sh")}"
 }
 
-resource "aws_eip" "private_ip" {
+resource "aws_eip" "public_ip" {
   count = 3  
   instance = "${aws_instance.web[count.index].id}"
   vpc      = true

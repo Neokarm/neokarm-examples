@@ -1,4 +1,4 @@
-## !! Please this example was converted to terraform 0.12 syntax!!
+## !! Please this example was tested with aws provider version v.2.13.0!!
 
 ### Terraform WordPress deployment
 
