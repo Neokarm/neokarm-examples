@@ -191,12 +191,12 @@ resource "aws_alb" "alb" {
   subnets            = [aws_subnet.subnet2.id]
   internal           = false
   security_groups    = [aws_security_group.lb-sg.id]
-  load_balancer_type = "application"
+  load_balancer_type = var.lb_type
 }
 
 resource "aws_alb_target_group" "targ" {
   port     = 8080
-  protocol = "HTTP"
+  protocol = var.protocol
   vpc_id   = aws_vpc.alb-vpc.id
 }
 
@@ -208,7 +208,8 @@ resource "aws_alb_target_group_attachment" "attach_web_servers" {
 }
 
 resource "aws_alb_listener" "list" {
-  default_action {
+protocol = var.protocol
+default_action {
     target_group_arn = aws_alb_target_group.targ.arn
     type             = "forward"
   }

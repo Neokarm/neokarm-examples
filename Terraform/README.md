@@ -7,7 +7,7 @@ These examples show you how to use the Terraform AWS provider with Neokarm Symph
 
 Before you can use these Terraform examples, you need to:
 
-* First, do some setup tasks within Symphony.
+* First, Perform the setup tasks within Symphony as described bellow.
 
 * Then, edit the sample `terraform.tfvars` file to specify your environment-specific values for various variables.
 

@@ -1,6 +1,6 @@
 # .tfvars Sample File
 
-# Region Credentials
+# Region Credentia
 symphony_ip = "<symphony_ip>"
 access_key  = "<access_key>"
 secret_key  = "<secret_key>"
@@ -9,7 +9,13 @@ secret_key  = "<secret_key>"
 # Recommend use of Xenial's latest cloud image
 # located here: https://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img 
 
-ami_webserver = "<ami_webserver>"
+ami_webserver = "<image_id>"
+
+# default lb type is application load balancer
+# in order to create Network load balancer, delete begining ladders of those 2 variables:
+# lb_type = "network"
+# protocol = "TCP"
+
 
 # optional
 # web_servers_type = "<instance-type>"
