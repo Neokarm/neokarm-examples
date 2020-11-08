@@ -7,6 +7,6 @@ and assign it with a custom parameters group with modified parameters.
 
 ## Getting started
 1. Make sure you have the database engine you want to provision is enabled in Symphony.
-2. Make sure you have the latest terraform installed
+2. Make sure you have the applicable terraform installed
 3. Modify the `terraform.tfvars` file according to your environment variables
 4. Run `terraform apply`

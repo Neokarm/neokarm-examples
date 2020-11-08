@@ -19,18 +19,18 @@ resource "aws_instance" "ec2_instance" {
   instance_type = "t2.micro"
   network_interface {
     device_index = 0
-    network_interface_id = aws_network_interface.test1.id
+    network_interface_id = aws_network_interface.eni-1.id
   }
   network_interface {
     device_index = 1
-    network_interface_id = aws_network_interface.test2.id
+    network_interface_id = aws_network_interface.eni-2.id
   }
 }
 
-resource "aws_network_interface" "test1" {
+resource "aws_network_interface" "eni-1" {
   subnet_id = aws_subnet.test1-network.id
 }
 
-resource "aws_network_interface" "test2" {
+resource "aws_network_interface" "eni-2" {
   subnet_id = aws_subnet.test2-network.id
 }

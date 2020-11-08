@@ -9,15 +9,15 @@ resource "aws_instance" "bastion" {
   # Can use any aws instance type supported by symphony
   instance_type = "t2.micro"
   vpc_security_group_ids = [
-    aws_security_group.ingress-ssh.id,
-    aws_security_group.egress-all.id,
-    aws_security_group.ingress-ping.id,
+    aws_security_group.ssh-sg.id,
+    aws_security_group.sg-any.id,
+    aws_security_group.icmp-sg.id,
   ]
-  key_name = aws_key_pair.app_keypair.key_name
+  key_name = aws_key_pair.bastion_keypair.key_name
 }
 
-resource "aws_key_pair" "app_keypair" {
-  public_key = file(pathexpand(var.public_keypair_path))
+resource "aws_key_pair" "bastion_keypair" {
+  public_key = file(pathexpand(var.public_bastion_keypair_path))
   key_name   = "bastion_kp"
 }
 
@@ -36,7 +36,7 @@ output "bastion_elastic_ips" {
 
 ####################### General ###################################
 
-resource "aws_security_group" "ingress-ssh" {
+resource "aws_security_group" "ssh-sg" {
   name   = "bastion_ingress-ssh"
   vpc_id = aws_vpc.app_vpc.id
   ingress {
@@ -47,7 +47,7 @@ resource "aws_security_group" "ingress-ssh" {
   }
 }
 
-resource "aws_security_group" "ingress-ping" {
+resource "aws_security_group" "icmp-sg" {
   name   = "bastion_ingress-ping"
   vpc_id = aws_vpc.app_vpc.id
   ingress {
@@ -58,7 +58,7 @@ resource "aws_security_group" "ingress-ping" {
   }
 }
 
-resource "aws_security_group" "egress-all" {
+resource "aws_security_group" "sg-any" {
   name   = "bastion_egress-all"
   vpc_id = aws_vpc.app_vpc.id
   egress {
@@ -67,5 +67,10 @@ resource "aws_security_group" "egress-all" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+}
+
+resource "aws_key_pair" "app_keypair" {
+  public_key = file(pathexpand(var.public_keypair_path))
+  key_name   = "packer_kp"
 }
 

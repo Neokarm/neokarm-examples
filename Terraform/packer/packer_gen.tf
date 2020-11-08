@@ -7,7 +7,7 @@ data "template_file" "packer_template" {
     symphony_ip          = var.symphony_ip
     subnet_id            = aws_subnet.pub_subnet.id
     vpc_id               = aws_vpc.app_vpc.id
-    sg_ids               = "\"${aws_security_group.ingress-ssh.id}\",\"${aws_security_group.egress-all.id}\""
+    sg_ids               = "\"${aws_security_group.ssh-sg.id}\",\"${aws_security_group.sg-any.id}\""
     kp_name              = aws_key_pair.app_keypair.key_name
     bastion_public_ip    = aws_eip.bastion-eip.public_ip
     bastion_user_name    = var.bastion_user_name

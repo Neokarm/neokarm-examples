@@ -4,7 +4,7 @@ resource "aws_vpc" "test_vpc" {
   enable_dns_support = false
 }
 
-resource "aws_subnet" "sub1" {
+resource "aws_subnet" "subnet" {
   cidr_block = "172.127.3.0/24"
   vpc_id = aws_vpc.test_vpc.id
   tags = {
@@ -12,10 +12,10 @@ resource "aws_subnet" "sub1" {
   }
 }
 
-resource "aws_db_subnet_group" "dbsubnet" {
+resource "aws_db_subnet_group" "db-sub-grp" {
   
-  name = "main"
-  subnet_ids = [aws_subnet.sub1.id]
+  name = "DB-subnet-group"
+  subnet_ids = [aws_subnet.subnet.id]
    tags = {
     Name = "My DB subnet group"
   }
@@ -32,5 +32,5 @@ resource "aws_db_instance" "dbinst1" {
   username = "terraform"
   engine_version = "5.7.00"
   skip_final_snapshot = true
-  db_subnet_group_name = aws_db_subnet_group.dbsubnet.name
+  db_subnet_group_name = aws_db_subnet_group.db-sub-grp.name
 }

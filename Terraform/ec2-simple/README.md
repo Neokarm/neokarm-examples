@@ -8,7 +8,7 @@ This Terraform example creates a very simple EC2 instance from an AMI stored in 
 
 Before you can use this Terraform example, you need to:
 
-  * First, do some setup tasks within Symphony.
+  * First, do some setup tasks as describe bellow within Symphony.
 
   * Then, edit the sample `terraform.tfvars` file to specify your environment-specific values for various variables.
 
@@ -52,7 +52,7 @@ Use the included `terraform.tfvars` file as a template. For each variable, fill 
 
 ## How to use
 
-1. Get the most recent version of Terraform.
+1. Get the fix version of Terraform.
 
 2. Run `terraform init`.
 

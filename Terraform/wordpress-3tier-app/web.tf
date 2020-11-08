@@ -31,7 +31,7 @@ resource "aws_instance" "web-server" {
   ami = var.web_ami
 
   # The public SG is added for SSH and ICMP
-  vpc_security_group_ids = [aws_security_group.web-sec.id, aws_security_group.allout.id]
+  vpc_security_group_ids = [aws_security_group.web-sec.id, aws_security_group.allout-sg.id]
   instance_type          = var.web_instance_type
   subnet_id              = aws_subnet.web_subnet.id
   key_name               =aws_key_pair.app_keypair.key_name
@@ -49,7 +49,7 @@ resource "aws_instance" "bastion" {
   ami = var.web_ami
 
   # The public SG is added for SSH and ICMP
-  vpc_security_group_ids = [aws_security_group.pub.id, aws_security_group.allout.id]
+  vpc_security_group_ids = [aws_security_group.pub_sg.id, aws_security_group.allout-sg.id]
   instance_type          = var.web_instance_type
   key_name               = aws_key_pair.app_keypair.key_name
   subnet_id              = aws_subnet.pub_subnet.id
@@ -116,7 +116,7 @@ resource "aws_security_group" "web-sec" {
 }
 
 #public access sg 
-resource "aws_security_group" "pub" {
+resource "aws_security_group" "pub_sg" {
   name   = "pub-secgroup"
   vpc_id = aws_vpc.app_vpc.id
 
@@ -137,7 +137,7 @@ resource "aws_security_group" "pub" {
   }
 }
 
-resource "aws_security_group" "allout" {
+resource "aws_security_group" "allout-sg" {
   name   = "allout-secgroup"
   vpc_id = aws_vpc.app_vpc.id
 

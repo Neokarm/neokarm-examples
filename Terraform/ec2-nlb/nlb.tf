@@ -1,7 +1,8 @@
 # ---------------------------------------------------------------------------------------------------------------------
 #     This module creates the following resources:
 #          * VPC
-#          * 2 Subnets
+#          * Public subnets
+#          * Private subnet
 #          * DHCP options
 #          * Internet gateway
 #          * Routing table
@@ -13,7 +14,7 @@
 #
 #     This example was tested on versions:
 #     - Symphony version 5.5.3
-#     - terraform 0.12.27
+#     - terraform 0.12.27 & 0.13
 # ---------------------------------------------------------------------------------------------------------------------
 
 resource "aws_vpc" "vpc" {
@@ -62,7 +63,7 @@ resource "aws_vpc_dhcp_options_association" "dns_resolver" {
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.vpc.id
 }
-resource "aws_route_table" "public" {
+resource "aws_route_table" "rt" {
   vpc_id = aws_vpc.vpc.id
 
   route {
@@ -71,14 +72,14 @@ resource "aws_route_table" "public" {
   }
 
   tags = {
-    Name      = "Smaple public RoutTable",
+    Name      = "Sample public route table",
     CreatedBy = "Terraform"
   }
 }
 
-resource "aws_route_table_association" "public" {
+resource "aws_route_table_association" "rt_assoc" {
   subnet_id      = aws_subnet.public_subnet.id
-  route_table_id = aws_route_table.public.id
+  route_table_id = aws_route_table.rt.id
 }
 
 resource "aws_instance" "nginx" {
@@ -113,7 +114,7 @@ resource "aws_security_group" "nginx" {
     from_port       = 80
     to_port         = 80
     protocol        = "tcp"
-    security_groups = [aws_security_group.elb.id]
+    security_groups = [aws_security_group.sg.id]
   }
 
   egress {
@@ -124,8 +125,8 @@ resource "aws_security_group" "nginx" {
   }
 }
 
-resource "aws_security_group" "elb" {
-  name   = "elb-sg"
+resource "aws_security_group" "sg" {
+  name   = "nlb-sg"
   vpc_id = aws_vpc.vpc.id
 
   ingress {
@@ -160,12 +161,11 @@ resource "aws_security_group" "elb" {
 }
 
 resource "aws_lb" "nlb" {
-  name               = "sample-elb"
-  internal           = false
+  name               = "sample-nlb"
   load_balancer_type = "network"
   subnets            = [aws_subnet.public_subnet.id]
-  security_groups    = [aws_security_group.elb.id]
-
+  security_groups    = [aws_security_group.sg.id]
+  depends_on         = [aws_route_table.rt]
   tags = {
     Name      = "sample-load-balancer",
     CreatedBy = "Terraform"
@@ -187,8 +187,13 @@ resource "aws_lb_target_group" "lb-tg" {
   port        = 80
   protocol    = "TCP"
   vpc_id      = aws_vpc.vpc.id
+  target_type = "ip"
+  stickiness {
+    enabled = false
+    type = "lb_cookie"
+  }
 }
-resource "aws_lb_target_group_attachment" "test" {
+resource "aws_lb_target_group_attachment" "lb_tg_attach" {
   target_group_arn = aws_lb_target_group.lb-tg.arn
   count = 3
   target_id        = aws_instance.nginx[count.index].id

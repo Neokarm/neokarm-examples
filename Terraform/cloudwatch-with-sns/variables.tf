@@ -17,3 +17,6 @@ variable "sns_topic_name_prefix" {
   description = "The prefix of the SNS Topic name to send events to"
   default     = "tf-example-sns-topic"
 }
+variable "user_id" {
+default = "admin"
+}

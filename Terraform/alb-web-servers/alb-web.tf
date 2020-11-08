@@ -2,7 +2,7 @@
 # ---------------------------------------------------------------------------------------------------------------------
 #     This module creates the following resources:
 #          * VPC
-#          * Subnet
+#          * 2 Subnets
 #          * DHCP options
 #          * Internet gateway
 #          * Routing table
@@ -14,7 +14,7 @@
 #
 #     This example was tested on versions:
 #     - Symphony version 5.5.3
-#     - terraform 0.12.27
+#     - terraform 0.12.27 & 0.13
 # ---------------------------------------------------------------------------------------------------------------------
 
 
@@ -35,6 +35,15 @@ resource "aws_subnet" "subnet1" {
     Name = "ALB Example web subnet"
   }
 }
+resource "aws_subnet" "subnet2" {
+  cidr_block = "172.21.2.0/24"
+  vpc_id     = aws_vpc.alb-vpc.id
+
+  tags = {
+    Name = "ALB Example lb subnet"
+  }
+}
+
 
 # add dhcp options
 resource "aws_vpc_dhcp_options" "dns_resolver" {
@@ -87,7 +96,7 @@ resource "aws_instance" "web-server" {
   instance_type = var.web_servers_type
   subnet_id     = aws_subnet.subnet1.id
 
-  vpc_security_group_ids = [aws_security_group.web-sec.id, aws_security_group.allout.id]
+  vpc_security_group_ids = [aws_security_group.web-sec.id, aws_security_group.allout_sg.id]
   user_data              = data.template_cloudinit_config.web_config.rendered
 
   tags = {
@@ -132,7 +141,7 @@ resource "aws_security_group" "web-sec" {
 
 #public access sg 
 # allow all egress traffic (needed for server to download packages)
-resource "aws_security_group" "allout" {
+resource "aws_security_group" "allout_sg" {
   name   = "allout-secgroup"
   vpc_id = aws_vpc.alb-vpc.id
 
@@ -145,7 +154,7 @@ resource "aws_security_group" "allout" {
 }
 
 # LB Sec group definition 
-resource "aws_security_group" "lb-sec" {
+resource "aws_security_group" "lb-sg" {
   name   = "lb-secgroup"
   vpc_id = aws_vpc.alb-vpc.id
 
@@ -179,9 +188,9 @@ resource "aws_security_group" "lb-sec" {
 # to make LB internal (no floating IP) set internal to true
 resource "aws_alb" "alb" {
   name               = "web-alb"
-  subnets            = [aws_subnet.subnet1.id]
+  subnets            = [aws_subnet.subnet2.id]
   internal           = false
-  security_groups    = [aws_security_group.lb-sec.id]
+  security_groups    = [aws_security_group.lb-sg.id]
   load_balancer_type = "application"
 }
 

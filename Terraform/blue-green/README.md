@@ -5,7 +5,7 @@ In order to simulate that "Blue-Green deployment" ,we will apply Terraform twice
 
 ## Scenario key Terraform feature
 
-```python
+```
 lifecycle {
     create_before_destroy = true
   }
@@ -17,13 +17,14 @@ lifecycle {
 
 1.Ensure you have imported an Ubuntu Xenial cloud image and made this image public, grab the AMI ID and insert it into your .tfvars file.
 2.Ensure your tenants project that you are deploying into has VPC mode enabled, with access keys generated (insert the access/secret keys into your .tfvars file).
-
+3.Ensure your account admin enabled Load-balancer service.
 
 
 
 ## Getting started
-1. Make sure you have the terraform version v0.12.0 installed.
+1. Make sure you have the fix terraform version installed.
 2. Modify the terraform.tfvars file according to your environment.
 3. Run terraform apply
-4. Change "1" to "2" in webconfig file.
-5. Run terraform apply. 
+4. Change the content of the html page (demonstrates change in the running app) by changing "1" to "2" in webconfig file.
+5. Run terraform init.
+6. Run terraform apply. 

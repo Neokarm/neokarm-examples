@@ -1,7 +1,7 @@
 # Create db instance 
 
 #make db subnet group 
-resource "aws_db_subnet_group" "dbsubnet" {
+resource "aws_db_subnet_group" "dbsubnet-grp" {
   name       = "wordpress_db_subnet"
   subnet_ids = [aws_subnet.db_subnet.id]
 }
@@ -17,8 +17,8 @@ resource "aws_db_instance" "wpdb" {
   username               = var.db_user
   engine_version         = "5.7.00"
   skip_final_snapshot    = true
-  db_subnet_group_name   = aws_db_subnet_group.dbsubnet.name
-  vpc_security_group_ids = [aws_security_group.db.id]
+  db_subnet_group_name   = aws_db_subnet_group.dbsubnet-grp.name
+  vpc_security_group_ids = [aws_security_group.db_sg.id]
 
   # Workaround for Symphony 
   lifecycle {
@@ -29,7 +29,7 @@ resource "aws_db_instance" "wpdb" {
   }
 }
 
-resource "aws_security_group" "db" {
+resource "aws_security_group" "db_sg" {
   name   = "db-secgroup"
   vpc_id = aws_vpc.app_vpc.id
 
