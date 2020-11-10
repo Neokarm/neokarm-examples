@@ -5,7 +5,7 @@ To get the ami id, simply fetch the image uuid from the Symphony UI, and convert
 `ami-<uuid without dashes>`
 
 ## Getting started
-1. Make sure you have the latest terraform installed
+1. Make sure you have fix terraform installed
 2. Make sure to use an ubuntu cloud image. Grab one [here](https://cloud-images.ubuntu.com/zesty/current/zesty-server-cloudimg-amd64.img)
 3. Create/Import a keypair in Symphony
 4. Create/Specify a security group
@@ -14,3 +14,4 @@ To get the ami id, simply fetch the image uuid from the Symphony UI, and convert
 
 ## Notes
 The script assumes the local default network can be routed using an existing VLAN
+

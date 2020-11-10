@@ -1,3 +1,21 @@
+# ---------------------------------------------------------------------------------------------------------------------
+#     This module creates the following resources:
+#          * VPC
+#          * Public Subnet
+#          * DHCP options
+#          * Internet gateway
+#          * Routing table
+#          * 2 Instances
+#          * 2 Security groups
+#          * bastion instance
+#          * 2 Key pair
+#          * Eip 
+#  
+#     This example was tested on versions:
+#     - Symphony version 5.5.3
+#     - terraform 0.12.27 & 0.13
+# ---------------------------------------------------------------------------------------------------------------------
+
 resource "aws_instance" "bastion" {
   ami       = var.bastion_ami_image
   subnet_id = aws_subnet.pub_subnet.id

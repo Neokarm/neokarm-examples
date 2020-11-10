@@ -5,6 +5,8 @@ variable "access_key" {}
 variable "credentials_file" {
  default = "~/.aws/credentials"
 }
+
+
 # Main variables
 variable "ami_webserver" {}
 variable "public_keypair_path" {}

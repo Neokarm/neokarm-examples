@@ -1,3 +1,28 @@
+
+
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+#     This module creates the following resources:
+#          * VPC
+#          * 2 Subnets
+#          * DHCP options
+#          * Internet gateway
+#          * Routing table
+#          * bastion instance
+#          * bastion eip
+#          * key pair
+#          * 3 Security groups
+#          * Application load balancer
+#          * Target group
+#          * Listener
+#          * Auto Scaling Group
+#          * Launch Configuration
+#  
+#     This example was tested on versions:
+#     - Symphony version 5.5.3
+#     - terraform 0.12 & 0.13
+# ---------------------------------------------------------------------------------------------------------------------
 ###################################
 # Creating a VPC & Networking
 ###################################
@@ -127,7 +152,7 @@ output "Bastion_Elastic_IP" {
 }
 
 resource "aws_key_pair" "app_keypair" {
-  public_key      ="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDBml0xioaVzhoL2Y4J9rMo8chvRka1uASnShHHFq13T6C1ohe9Nx54ruKpBJKK6X6qbQ/UxldMloTXNYGdeWz1saOW10NQOv9SNLIqXJEm7c2q3uN8adAzWvo5zLP+T9Og0xEjQFRdRxup0OGq/qscimR/QTU6RmkDn5xuQ5BgGUJiPd6KsO4BPtzqLXWYwf6wY10miZ06x3/4zemBvIbBRNpZwGoGx/qtJHuOLbTIb40kNQ5kzsES6fREbup/WKwN/iV8A564mEjSPf0Lusv39+SNsm8xyh1G2pd2pUP5I5VF1DOQp2tmerJOqmZP9DUdFUoaY2166tsEjHL0Z/Fz harel@localhost.localdomain"
+  public_key      = file(var.public_keypair_path)
   key_name_prefix = "bg_kp_"
 }
 

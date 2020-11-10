@@ -1,24 +1,25 @@
+## This example was tested with aws provider version v.2.13.0!!
+
 ### Terraform WordPress deployment
 
 ## Description:
-This TF script will deploy a single region highly available WordPress site with RDS, EC2 and ELB inside a VPC on top Neokarm Symphony. 
+This TF script will deploy a single region highly available WordPress site with RDS, EC2 and VPC into Symphony. 
 
 ## Before you begin: Create SSH Key-Pairs
 
 ssh-keygen -f <path to key file> -t rsa -b 2048
-
 Two files will be created:
- - without suffix file - the private key
+ - no suffix file - the private key
  - .pub suffix - the public key. This is the file you pass in tfvars
-
+ 
 ## Before running
 Along with your API credentials, ensure you specify the AMI ID in your .tfvars file. A sample has been created to reference. Please use a cloud-ready Ubuntu Xenial image. For list of official AMI's see: https://cloud-images.ubuntu.com/locator/ec2/.
 
 ### Networks to be provisioned:
 - 1 VPC 
 - 2 Database subnets 
-- 1 Web subnets 
-- 2 public subnets 
+- 1  Web subnets 
+- 2  public subnets 
 
 ### Resources:
 - 1 NLB
@@ -31,5 +32,5 @@ Along with your API credentials, ensure you specify the AMI ID in your .tfvars f
 - RDS Enabled with Mysql 5.7 engine initialized
 - VPC mode enabled for tenant project
 
-### Tested with: Terraform v0.12 & v0.13
+### Tested with: Terraform v0.12 & 0.13
 

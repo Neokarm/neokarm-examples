@@ -1,3 +1,15 @@
+# ---------------------------------------------------------------------------------------------------------------------
+#     This module creates the following resources:
+#          * VPC
+#          * Subnet
+#          * DB subnet group
+#          * DB instance
+#  
+#     This example was tested on versions:
+#     - Symphony version 5.5.3
+#     - terraform 0.12.27
+# ---------------------------------------------------------------------------------------------------------------------
+
 resource "aws_vpc" "test_vpc" {
   cidr_block = "172.127.0.0/16"
   enable_dns_hostnames = false

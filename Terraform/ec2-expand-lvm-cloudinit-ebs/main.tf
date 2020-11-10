@@ -1,3 +1,17 @@
+# ---------------------------------------------------------------------------------------------------------------------
+#     This module creates the following resources:
+#          
+#          * 1 Instance
+#          * Key pair
+#          * Eip
+#           
+#  
+#     This example was tested on versions:
+#     - Symphony version 5.5.3
+#     - terraform 0.12.27 & 0.13
+# ---------------------------------------------------------------------------------------------------------------------
+
+
 # Create instances, and name them according to count
 
 # Defining cloud config template file 

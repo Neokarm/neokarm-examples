@@ -1,8 +1,8 @@
 provider "aws" {
-#select option of providing public and secret keys: as variables or in configuration file.
-#  access_key = var.access_key
-#  secret_key = var.secret_key
-  shared_credentials_file = var.credentials_file
+# select option of providing public and secret keys: as variables or in configuration file.
+  access_key = var.access_key
+  secret_key = var.secret_key
+#  shared_credentials_file = var.credentials_file
 
  endpoints {
      ec2 = "https://${var.symphony_ip}/api/v2/aws/ec2"
