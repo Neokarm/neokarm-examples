@@ -17,16 +17,20 @@ data "template_cloudinit_config" "ebsdeploy_config" {
   }
 }
 
+resource "aws_key_pair" "ssh_key" {
+  key_name   = "ssh_key"
+  public_key = file(var.public_keypair_path)
+}
 
 resource "aws_instance" "ec2_instance" {
     ami = var.instance_image
-
-    tags ={
-        Name="instance${count.index}"
+    key_name = aws_key_pair.ssh_key.key_name
+    tags = {
+        Name= "instance_expanded"
     }
     
     instance_type = var.instance_type
-    count=var.instance_number
+   
 
     user_data = data.template_cloudinit_config.ebsdeploy_config.rendered
 
@@ -34,5 +38,11 @@ resource "aws_instance" "ec2_instance" {
         # Enter larger volume size here in GB, must be larger than images base size
         volume_size = 200
     }
-
 }
+resource "aws_eip" "public_ip" {
+ instance = aws_instance.ec2_instance.id
+ vpc = true
+ depends_on = [aws_instance.ec2_instance]
+}
+
+

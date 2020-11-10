@@ -4,9 +4,8 @@ variable "secret_key" {}
 variable "access_key" {}
 # variable "credentials_file" {}
 variable "instance_image" {}
-variable "instance_number" {
-  default = 1
-}
+
+variable "public_keypair_path" {}
 variable "instance_type" {
   default = "t2.medium"
 }
