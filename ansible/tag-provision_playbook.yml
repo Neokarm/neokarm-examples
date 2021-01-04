@@ -1,0 +1,102 @@
+- name: Create EC2 instance Symphony
+  strategy: free
+  hosts: localhost
+  connection: local
+  gather_facts: False
+  vars:
+    image_ami: ami-731577fa9fd44a93bd0430bc50a54f48
+    instance_type: m1.large
+    instance_count: 3
+    ec2_url: https://10.16.146.39/api/v2/ec2/
+
+  tasks:
+   - name: Security group for demo machines
+     ec2_group:
+       name: demo_group
+       description: Open ICMP and SSH for demo machines
+       ec2_url: "{{ ec2_url }}"
+       validate_certs: no
+       region: us-east-1
+       rules:
+        - proto: tcp
+          from_port: 22
+          to_port: 22
+          cidr_ip: 0.0.0.0/0
+        - proto: icmp
+          from_port: -1 # ICMP type
+          to_port: -1 # ICMP subtype
+          cidr_ip: 0.0.0.0/0
+
+   - name: create key pair using keys which already been generated.
+     ec2_key:
+        name: my_keypair
+        key_material: "{{ lookup('file', '/home/harel/.ssh/id_rsa.pub') }}"
+        ec2_url: "{{ ec2_url }}"
+        validate_certs: no
+        region: us-east-1
+        state: present
+        force: false
+
+   - name: Launch instances
+     ec2:
+        ec2_url: "{{ ec2_url }}"
+        validate_certs: no
+        key_name: key
+        group: "{{sg_name}}"
+        instance_type: "{{ instance_type }}"
+        image: "{{ image_ami }}"
+        instance_tags:
+            Name: demotag
+            tag: demotag
+        count_tag:
+            Name: demotag
+        exact_count: "{{ instance_count }}"
+        wait: yes
+     register: ec2
+     
+   - debug:
+       msg: "Created ec2 tagged instance: {{ item }}"
+     with_items: "{{ ec2.tagged_instances }}"
+
+   - name: associate new elastic IPs with each of the instances
+     ec2_eip:
+       ec2_url: "{{ ec2_url }}"
+       validate_certs: no
+       device_id: "{{ item.id }}"
+       region: us-west-1
+       state: present
+       in_vpc: true
+     with_items: "{{ ec2.tagged_instances }}"
+     when: not item.public_ip
+     register: ec2_eip
+
+   - name: Refresh in-memory EC2 cache
+     meta: refresh_inventory
+
+   - name: print IPs with tag Name 'demotag'
+     debug:
+       msg: "Created ec2 instance with public IP: {{ item }}"
+     with_items: "{{ groups.tag_tag_demotag }}"
+
+   - name: Wait for SSH to come up
+     wait_for:
+       host: "{{ item }}"
+       port: 22
+       delay: 10
+       timeout: 320
+       state: started
+     with_items: "{{ groups.tag_Name_demotag }}"
+
+- name: "Configure slaves"
+  hosts: tag_Name_demotag
+  gather_facts: False
+  strategy: debug
+  user: ubuntu
+  become: yes
+  become_user: root
+  connection: ssh
+  tasks: 
+
+  - name: "echo something"
+    debug:
+     msg: "echo f"
