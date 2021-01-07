@@ -22,7 +22,7 @@ Before you can use these Terraform examples, you need to do the following tasks 
 
 2. Then create a **dedicated VPC-enabled project** for use with Terraform:
 
-    **Menu** > **Account Management** > **Accounts** > select an account > **Create Project** > **Enable VPC** > select existing Symphony edge network for this project.
+    **Menu** > **Identity & Access** > **Accounts** > select an account/**Create**  > **Create Project** > **select existing Symphony edge network for this project.
 
    
 3. **Create a user** that is associated the the project you just created:
