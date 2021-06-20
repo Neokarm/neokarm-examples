@@ -1,12 +1,16 @@
-# boto3 Examples
+# zCompute AWS Python SDK Integration Examples
 
-These examples show you how to use the boto3 module in python with Neokarm Clusters.
+The examples will help you get started with AWS Python SDK against Zadara zCompute.
+
+This repository aims to give examples to some of the common AWS Python SDK use cases Zadara supports:
+- EC2
+- RDS
+- ELB v2
 
 > **important!** All the following examples tested using python 2.7 with boto3 v1.4.7
 
-## Important to know
-
-In order to create a boto3 client to manage the resources in the cluster, the client must have a custom endpoint url per service.
+## Before you begin
+> In order to create a boto3 client to manage the resources in the cluster, the client must have a custom endpoint url per service.
 
 For example:
 
@@ -26,9 +30,8 @@ ec2 = boto3.Session.client(
 
 All the available enpoints can be seen in the the cluster : **Help** > **API Endpoints**
 
-## Before you begin
 
-Create programmatic access keys:
+> Create programmatic access keys:
 
 * Log in to the cluster with the relevant user
 
@@ -41,6 +44,8 @@ Create programmatic access keys:
     aws configure set aws_secret_access_key <secret_access_key>
     ```
 > For load balancing examples: **Ensure that the load balancer service in your cluster is initialized**
+
+> For rds example: **Ensure the Databasas service and the costum engine in your cluster are initialized**
 
 ## How to use
 
