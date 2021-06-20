@@ -5,7 +5,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # --------------------------------------------------------------------------------------------------------------------
 
-#     This script shows and example of Boto3 integration with Stratoscale Symphony.
+#     This script shows and example of Boto3 integration with Zadara zCompute.
 
 #     The scenario is as such:
 #         1. Instantiate an instance from an AMI
@@ -13,7 +13,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 #         3. Attach the volume to the created AMI
 
 #     This example was tested on versions:
-#     - Symphony version 5.5.3
+#     - zCompute version 5.5.3
 #     - boto3 1.4.7
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -23,12 +23,12 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 CLUSTER_IP = '<API endpoint IP>'
 
 
-# Creating a connection to Symphony AWS Compatible region
+# Creating a connection to zCompute AWS Compatible region
 def create_ec2_client():
     return boto3.Session.client(
             boto3.session.Session(),
             service_name="ec2",
-            region_name="symphony",
+            region_name="zCompute",
             endpoint_url="https://%s/api/v2/aws/ec2/" % CLUSTER_IP,
             verify=False
             )
@@ -74,7 +74,7 @@ def run_instance(client, image_id):
 def create_ebs_volume(client):
     ebs_vol = client.create_volume(
         Size=20,
-        AvailabilityZone='symphony'
+        AvailabilityZone='zCompute'
         )
     volume_id = ebs_vol['VolumeId']
     # check that the EBS volume had been created successfully
