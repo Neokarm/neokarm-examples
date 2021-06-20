@@ -1,8 +1,11 @@
-# Terraform Examples
+# zCompute Terraform Examples
 
-These examples show you how to use the Terraform AWS provider with Neokarm Clusters.
+These examples show you how to use the Terraform AWS provider with Zadara zCompute.
 
-> **important!** All the following examples tested using terraform v0.12 with aws provider v2.13.0
+
+## All examples tested with provider.aws v3.0.0 terraform v0.12 and v0.13!
+### Examples with rds works with provider.aws v2.13.0
+
 
 ## Important to know
 
@@ -36,15 +39,16 @@ provider "aws" {
 
 All the available enpoints can be seen in the the cluster : **Help** > **API Endpoints**
 
+
 ## Before you begin
 
-Create programmatic access keys:
+Before you can use these Terraform examples, you need to:
 
-* Log in to the cluster with the relevant user
+* First, Perform the setup tasks within zCompute as described bellow.
 
-* Generate new access keys: **Menu** > **Account Management** > **Access Keys** > **Create**
+* Then, edit the sample `terraform.tfvars` file to specify your environment-specific values for various variables.
 
-* update the aws default credentials
+Each task is described below.
 
     ```
     aws configure set aws_access_key_id <access_key_id>
@@ -56,8 +60,53 @@ Create programmatic access keys:
 
 1. Change the directory to the relvant example
 
-2. Run `terraform init`.
+### Before you begin: zCompute setup tasks
 
-3. Run `terraform apply`.
+Before you can use these Terraform examples, you need to do the following tasks within the zCompute GUI:
 
-4. If required, enter the relevant variables value.
+1. Log in to the zCompute GUI as a user whose account role is either **Admin** or **Tenant Admin**.
+
+2. Then create a **dedicated VPC-enabled project** for use with Terraform:
+
+    **Menu** > **Identity & Access** > **Accounts** > select an account/**Create**  > **Create Project** > **select existing zCompute edge network for this project.
+
+   
+3. **Create a user** that is associated the the project you just created:
+
+    **Menu** > **Account Management** > **Accounts** > select an account > **Users** > **Create User**
+    
+    **Projects** field: specify the project you just created
+    
+    **Account Roles** field: specify **Member** and/or **Tenant Admin**
+    
+        
+4. Get the **access and secret keys for the project**:
+
+    Log in to the Symhony GUI as the user you just created.
+    
+    **Menu** > **Account Management**> **Access Keys** > **Create**
+    
+    Copy both the access key and the secret key (click the copy icon to the right of each key).
+    
+
+5. **Do any additional tasks** that may be required by the scenario you wish to execute. These tasks are described in the readme files for each example. 
+
+### Before you begin: edit `terraform.tfvars`
+
+Each Terraform example includes a sample `terraform.tfvars` file that you can use as a template. For each variable, fill in your environment-specific value.
+
+Access keys can be provided as variables or as path to credentials file.
+Example of credentials file:
+```
+[default]
+aws_access_key_id=AKIAIOSFODNN7EXAMPLE
+aws_secret_access_key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+```
+## How to use
+
+1. Run `terraform init`.
+
+2. Run `terraform apply`.
+
+3. If required, enter the relevant variables value.
+

@@ -1,2 +1,2 @@
-# neokarm-examples
-Examples of integrations with Neokarm API
+# Zadara-examples
+Examples of integrations with Zadara zCompute API

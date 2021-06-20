@@ -1,4 +1,6 @@
-# Terrafomr files
+# Terraform files
 .terraform
 *.tfstate
 *.tfstate.backup
+*.json
+
