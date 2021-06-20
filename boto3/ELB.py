@@ -6,7 +6,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-#     This script shows and example of Boto3 ELB v2 integration with Neokarm Symphony.
+#     This script shows and example of Boto3 ELB v2 integration with Zadara zCompute.
 
 #     The scenario:
 #          1. Create VPC
@@ -26,7 +26,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 #          15. Create Listener
     
 #     This example was tested on versions:
-#     - Symphony version 5.5.3
+#     - zCompute version 5.5.3
 #     - boto3 1.4.7
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -35,7 +35,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 def main():
 
     # Parameters
-    CLUSTER_IP = 'API endpoint IP'
+    CLUSTER_IP = <'API endpoint IP'>
     VPC_CIDR = '172.20.0.0/16'
     PUBLIC_SUBNET_CIDR = '172.20.10.0/24'
     PRIVATE_SUBNET_CIDR = '172.20.20.0/24'
@@ -55,13 +55,13 @@ def main():
     ##
 
     ec2 = boto3.client(
-        service_name="ec2", region_name="symphony",
+        service_name="ec2", region_name="zCompute",
         endpoint_url="https://%s/api/v2/ec2/" % CLUSTER_IP,
         verify=False
         )
 
     elb = boto3.client(
-        service_name="elbv2", region_name="symphony",
+        service_name="elbv2", region_name="zCompute",
         endpoint_url="https://%s/api/v2/aws/elb" % CLUSTER_IP,
         verify=False
         )
