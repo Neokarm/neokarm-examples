@@ -18,13 +18,15 @@ from munch import unmunchify
 sys.path.append('/opt/symphony-client')
 
 import symphony_client
-import config
+from config import Config
 
 LOGS_DIR = "/var/log"
 STRATO_LOGS_DIR = LOGS_DIR + "/stratoscale"
-ZVM_CLONE_LOGS_DIR = STRATO_LOGS_DIR + "/zvm-clone"
-LOGGER_NAME = "zvm-clone"
+ZVM_CLONE_LOGS_DIR = STRATO_LOGS_DIR + "/zvm-transfer"
+LOGGER_NAME = "zvm-transfer"
 VPSA_VOLUME_TEMPLATE = 'neokarm_volume-{}'
+
+DRY_RUN = Config.DEFAULT_IS_DRY_RUN
 
 logger = logging.getLogger(LOGGER_NAME)
 
@@ -43,7 +45,7 @@ def migrate_vm(vm_id_or_name):
             sys.exit(1)
     vm_id = vm.id
     if vm.status == 'active':
-        logger.info("VM {} ({}) is active".format(vm.name, vm_id))
+        logger.info("VM {} ({}) is active in source cluster".format(vm.name, vm_id))
         sys.exit(1)
 
     dst_symp_client = init_dst_symp_client()
@@ -63,48 +65,48 @@ def migrate_vm(vm_id_or_name):
 def get_vm_by_id(client, vm_id, vm_list=None):
     if vm_list is None:
         vm_list = client.vms.list(detailed=True)
-    vm = [vm for vm in vm_list if vm.id == vm_id]
-    if not vm:
-        logger.info("VM with id: %s does not exists", vm_id)
+    filtered_vm_list = [vm for vm in vm_list if vm.id == vm_id]
+    if not filtered_vm_list:
+        logger.info("VM with id: %s does not exist", vm_id)
         return None
-    return vm[0]
+    return filtered_vm_list[0]
 
 
 def get_vm_by_name(client, vm_name, vm_list=None):
     if vm_list is None:
         vm_list = client.vms.list(detailed=True)
-    vm = [vm for vm in vm_list if vm.name == vm_name]
-    if not vm:
+    filtered_vm_list = [vm for vm in vm_list if vm.name == vm_name]
+    if not filtered_vm_list:
         logger.info("VM with name: %s does not exists", vm_name)
         return None
-    return vm[0]
+    return filtered_vm_list[0]
 
 
 def init_src_symp_client():
     my_session = requests.Session()
     my_session.verify = False
-    client = symphony_client.Client(url='https://%s' % config.SRC_CLUSTER_IP, session=my_session)
-    client.login(domain=config.SRC_ACCOUNT,
-                 username=config.SRC_USERNAME,
-                 password=config.SRC_PASSWORD,
+    client = symphony_client.Client(url='https://%s' % Config.SRC_CLUSTER_IP, session=my_session)
+    client.login(domain=Config.SRC_ACCOUNT,
+                 username=Config.SRC_USERNAME,
+                 password=Config.SRC_PASSWORD,
                  project='default',
-                 mfa_secret=config.SRC_MFA_SECRET)
+                 mfa_secret=Config.SRC_MFA_SECRET)
     return client
 
 
 def init_dst_symp_client():
     my_session = requests.Session()
     my_session.verify = False
-    client = symphony_client.Client(url='https://%s' % config.DST_CLUSTER_IP, session=my_session)
-    client.login(domain=config.DST_ACCOUNT,
-                 username=config.DST_USERNAME,
-                 password=config.DST_PASSWORD,
+    client = symphony_client.Client(url='https://%s' % Config.DST_CLUSTER_IP, session=my_session)
+    client.login(domain=Config.DST_ACCOUNT,
+                 username=Config.DST_USERNAME,
+                 password=Config.DST_PASSWORD,
                  project='default',
-                 mfa_secret=config.DST_MFA_SECRET)
+                 mfa_secret=Config.DST_MFA_SECRET)
     return client
 
 
-def extract_vm_info(vm, src_client):
+def extract_vm_info(vm):
     logger.info("Extracting info from VM:\n%s", pformat(unmunchify(vm)))
     vm_info = dict()
     vm_info['name'] = vm['name']
@@ -132,13 +134,13 @@ def extract_vm_info(vm, src_client):
 
 
 def create_networking_map(src_client, dst_client, vm):
-    src_networks = src_client.vpcs.networks.list(project_id=config.SRC_PROJECT)
+    src_networks = src_client.vpcs.networks.list(project_id=Config.SRC_PROJECT)
     src_networks_id_to_name = {network.id: network.name for network in src_networks}
     if len(src_networks) != len(src_networks_id_to_name):
         msg = "There are at least two networks with the same name in the source"
         logger.info(msg)
         raise Exception(msg)
-    dst_networks = dst_client.vpcs.networks.list(project_id=config.DST_PROJECT)
+    dst_networks = dst_client.vpcs.networks.list(project_id=Config.DST_PROJECT)
     dst_networks_name_to_id = {network.name: network.id for network in dst_networks}
     if len(dst_networks) != len(dst_networks_name_to_id):
         msg = "There are at least two networks with the same name in the destinations"
@@ -167,7 +169,7 @@ def create_networking_map(src_client, dst_client, vm):
             "security_groups": security_group_names
         }
         all_security_group_names.update(security_group_names)
-        existing_sg = dst_client.vpcs.security_groups.list(project_id=config.DST_PROJECT, name=list(security_group_names))
+        existing_sg = dst_client.vpcs.security_groups.list(project_id=Config.DST_PROJECT, name=list(security_group_names))
         if len(existing_sg) != len(all_security_group_names):
             msg = "Didn't find matching security_groups in destination out of: %s" % all_security_group_names
             logger.info(msg)
@@ -181,9 +183,21 @@ def create_networking_map(src_client, dst_client, vm):
 
 def manage_single_volume(volume_id, volume_name):
     dst_client = init_dst_symp_client()
-    manageable_volumes = dst_client.meletvolumes.list_manageable(config.DST_POOL_ID)
-    existing_volumes = [volume for volume in dst_client.meletvolumes.list() if volume.storagePool == config.DST_POOL_ID]
+    manageable_volumes = dst_client.meletvolumes.list_manageable(Config.DST_POOL_ID)
+    existing_volumes = [volume for volume in dst_client.meletvolumes.list() if volume.storagePool == Config.DST_POOL_ID]
     manage_volume(dst_client, manageable_volumes, existing_volumes, volume_id, 0, None, volume_name=volume_name)
+
+
+def unmanage_single_volume(volume_id):
+    dst_client = init_dst_symp_client()
+    volume_info = [volume for volume in dst_client.meletvolumes.list()
+                   if volume.storagePool == Config.DST_POOL_ID and volume.id == volume_id]
+    if volume_info:
+        dst_client.meletvolumes.unmanage(volume_id)
+    else:
+        msg = "Didn't find matching matching volume %s in destination" % volume_id
+        logger.info(msg)
+        raise Exception(msg)
 
 
 def manage_volumes_in_dest(vm, dst_client, manageable_volumes, existing_volumes):
@@ -196,8 +210,8 @@ def manage_volumes_in_dest(vm, dst_client, manageable_volumes, existing_volumes)
 
 
 def check_volumes_in_dest(vm, dst_client):
-    manageable_volumes = dst_client.meletvolumes.list_manageable(config.DST_POOL_ID)
-    existing_volumes = [volume for volume in dst_client.meletvolumes.list() if volume.storagePool == config.DST_POOL_ID]
+    manageable_volumes = dst_client.meletvolumes.list_manageable(Config.DST_POOL_ID)
+    existing_volumes = [volume for volume in dst_client.meletvolumes.list() if volume.storagePool == Config.DST_POOL_ID]
     # Manage
     index = 0
     check_manage_volume(manageable_volumes, existing_volumes, vm.bootVolume)
@@ -208,7 +222,7 @@ def check_volumes_in_dest(vm, dst_client):
 
 
 def manage_volume(dst_client, manageable_volumes, existing_volumes, volume_id, index, vm, ignore_exists=True, volume_name=None):
-    check_manage_volume(manageable_volumes, existing_volumes, volume_id)
+    check_manage_volume(manageable_volumes, existing_volumes, volume_id, ignore_exists=ignore_exists)
     # Manage volume if not exists
     existing_vol = [v for v in existing_volumes if v.id == volume_id]
     if not existing_vol:
@@ -219,15 +233,15 @@ def manage_volume(dst_client, manageable_volumes, existing_volumes, volume_id, i
         else:
             raise Exception("Invalid volume index %s" % index)
         dst_client.meletvolumes.manage(name=name,
-                                       storage_pool=config.DST_POOL_ID,
+                                       storage_pool=Config.DST_POOL_ID,
                                        reference={"name": VPSA_VOLUME_TEMPLATE.format(volume_id)},
-                                       project_id=config.DST_PROJECT,
+                                       project_id=Config.DST_PROJECT,
                                        volume_id=volume_id)
 
 
 def check_manage_volume(manageable_volumes, existing_volumes, volume_id, ignore_exists=True):
     volume_to_manage = [volume for volume in manageable_volumes if
-                             volume.reference.name == VPSA_VOLUME_TEMPLATE.format(volume_id)]
+                        volume.reference.name == VPSA_VOLUME_TEMPLATE.format(volume_id)]
     if ignore_exists:
         existing_vol = [v for v in existing_volumes if v.id == volume_id]
         if existing_vol:
@@ -304,7 +318,7 @@ def create_new_vm(vm, networks, manageable_volumes, existing_volumes, dst_client
         return
 
     vm_params = dict(instance_type=vm.instanceType,
-                     project_id=config.DST_PROJECT,
+                     project_id=Config.DST_PROJECT,
                      restart_on_failure=False,
                      tags=filtered_tags,
                      boot_volumes=[vm.bootVolume],
@@ -315,14 +329,14 @@ def create_new_vm(vm, networks, manageable_volumes, existing_volumes, dst_client
                      os_type_id=vm.provided_os_type_id,
                      powerup=False)
     logger.info("VM Creation params:\n%s", pformat(vm_params))
-    if config.DRY_RUN:
+    if Config.DRY_RUN:
         logger.info("Dry run - not creating")
         return
     manage_volumes_in_dest(vm, dst_client, manageable_volumes, existing_volumes)
 
     created_vm = dst_client.vms.create(name=vm.name,
                                        instance_type=vm.instanceType,
-                                       project_id=config.DST_PROJECT,
+                                       project_id=Config.DST_PROJECT,
                                        restart_on_failure=False,
                                        tags=filtered_tags,
                                        boot_volumes=[{"id": vm.bootVolume, "disk_bus": "virtio", "device_type": "disk"}],
@@ -369,9 +383,15 @@ def get_to_ipdb():
 def parse_arguments():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--vm-id", help="VM uuid", required=False)
+    parser.add_argument("op", choices=['migrate', 'migrate_all', 'manage', 'unmanage'],
+                        help="Operation to perform. one of: "
+                             "migrate (migrate a VM), "
+                             "migrate_all (migrate a list of VMs - from the script), "
+                             "manage (manage a single volume), "
+                             "unmanage (unmanage a single volume)", required=False)
+    parser.add_argument("--vm", help="VM uuid/name", required=False)
     parser.add_argument("--skip-sg", action='store_true', help="skip security-groups", default=False, required=False)
-    parser.add_argument("--ipdb", action='store_true', help="give me pdb with client", default=False, required=False)
+    parser.add_argument("--ipdb", action='store_true', help="give me ipdb with clients and continue", default=False, required=False)
     parser.add_argument("--volume-id", help="Just manage volume", default=False, required=False)
     parser.add_argument("--volume-name", help="Name for managed volume", default=None, required=False)
 
@@ -389,15 +409,33 @@ if __name__ == "__main__":
     args = parse_arguments()
     init_logger()
     arguments = args
-    if args.vm_id:
-        migrate_vm(args.vm_id)
-        sys.exit(0)
-    if args.volume_id:
-        manage_single_volume(args.volume_id, args.volume_name)
-        sys.exit(0)
+
     if args.ipdb:
         get_to_ipdb()
+
+    if args.op == 'migrate':
+        if not args.vm:
+            logger.info("Please provide the VM name/UUID you want to migrate")
+            sys.exit(1)
+        migrate_vm(args.vm_id)
         sys.exit(0)
+    elif args.op == 'manage':
+        if args.volume_id:
+            manage_single_volume(args.volume_id, args.volume_name)
+            sys.exit(0)
+        else:
+            logger.info("Please provide the volume UUID you want to manage")
+            sys.exit(1)
+    elif args.op == 'unmanage':
+        if args.volume_id:
+            unmanage_single_volume(args.volume_id)
+            sys.exit(0)
+        else:
+            logger.info("Please provide the volume UUID you want to unmanage")
+            sys.exit(1)
+    elif args.op != 'migrate_all':
+        logger.info("Please provide a valid op, one of:  migrate/migrate_all/manage/unmanage")
+        sys.exit(1)
 
     vms_to_migrate = [
         # "psg-prisql",
@@ -444,6 +482,7 @@ if __name__ == "__main__":
         # "danel-sql-p1",
         # "W2K12R2DC",  -- In different VPC ignored
     ]
+    logger.info("Migrating a list of VMs: %s", vms_to_migrate)
     for vm_name in vms_to_migrate:
         answer = raw_input("Migrate {} [Y/n]? ".format(vm_name))
         if answer == 'Y':
