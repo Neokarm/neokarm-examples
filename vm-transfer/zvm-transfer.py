@@ -3,11 +3,12 @@
 """
 A python script that clones a VM from the source system to the destination system
 """
+import sys 
+sys.path.append('/opt/symphony-client')
 
 __version__ = "0.1.0"
 
 import os
-import sys
 import logging
 import argparse
 import atexit
@@ -15,18 +16,15 @@ import requests
 from pprint import pformat, pprint
 from munch import unmunchify
 
-sys.path.append('/opt/symphony-client')
-
 import symphony_client
 from config import Config
 
-LOGS_DIR = "/var/log"
-STRATO_LOGS_DIR = LOGS_DIR + "/stratoscale"
-ZVM_CLONE_LOGS_DIR = STRATO_LOGS_DIR + "/zvm-transfer"
+LOGS_DIR = "."
+ZVM_CLONE_LOGS_DIR = LOGS_DIR + "/zvm-transfer-logs"
 LOGGER_NAME = "zvm-transfer"
 VPSA_VOLUME_TEMPLATE = 'neokarm_volume-{}'
 
-DRY_RUN = Config.DEFAULT_IS_DRY_RUN
+DRY_RUN = Config.DRY_RUN
 
 logger = logging.getLogger(LOGGER_NAME)
 
@@ -349,7 +347,7 @@ def create_new_vm(vm, networks, manageable_volumes, existing_volumes, dst_client
     logger.info("Created VM:\n%s", pformat(created_vm))
 
 
-def init_logger():
+def init_logger(vm_id):
     formatter = logging.Formatter('%(asctime)s [%(name)s] %(levelname)-10s %(message)s')
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(formatter)
@@ -358,7 +356,7 @@ def init_logger():
     if not os.path.exists(ZVM_CLONE_LOGS_DIR):
         os.makedirs(ZVM_CLONE_LOGS_DIR)
 
-    logfile = '{logger_name}-{vm_id}.log'.format(logger_name=LOGGER_NAME, vm_id=args.vm_id)
+    logfile = '{logger_name}-{vm_id}.log'.format(logger_name=LOGGER_NAME, vm_id=vm_id)
     logfile_with_path = os.path.join(ZVM_CLONE_LOGS_DIR, logfile)
 
     file_handler = logging.FileHandler(filename=logfile_with_path)
@@ -375,9 +373,9 @@ def init_logger():
 
 
 def get_to_ipdb():
+    import ipdb; ipdb.set_trace()
     src_client = init_src_symp_client()
     dst_client = init_dst_symp_client()
-    import ipdb; ipdb.set_trace()
 
 
 def parse_arguments():
@@ -388,7 +386,7 @@ def parse_arguments():
                              "migrate (migrate a VM), "
                              "migrate_all (migrate a list of VMs - from the script), "
                              "manage (manage a single volume), "
-                             "unmanage (unmanage a single volume)", required=False)
+                             "unmanage (unmanage a single volume)")
     parser.add_argument("--vm", help="VM uuid/name", required=False)
     parser.add_argument("--skip-sg", action='store_true', help="skip security-groups", default=False, required=False)
     parser.add_argument("--ipdb", action='store_true', help="give me ipdb with clients and continue", default=False, required=False)
@@ -407,7 +405,7 @@ def parse_arguments():
 if __name__ == "__main__":
     """ This is executed when run from the command line """
     args = parse_arguments()
-    init_logger()
+    init_logger(vm_id=args.vm)
     arguments = args
 
     if args.ipdb:
@@ -417,7 +415,7 @@ if __name__ == "__main__":
         if not args.vm:
             logger.info("Please provide the VM name/UUID you want to migrate")
             sys.exit(1)
-        migrate_vm(args.vm_id)
+        migrate_vm(args.vm)
         sys.exit(0)
     elif args.op == 'manage':
         if args.volume_id:
