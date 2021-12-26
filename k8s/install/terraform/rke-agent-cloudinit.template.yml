@@ -1,0 +1,33 @@
+#cloud-config
+write_files:
+  - path: /etc/rancher/rke2/config.yaml
+    owner: root:root
+    permissions: '0644'
+    content: |
+      selinux: true
+      node-name: ${ hostname }
+      token: ${ random_uuid }
+      server: ${ seeder_url }
+  - path: /etc/NetworkManager/conf.d/rke.conf
+    owner: root:root
+    permissions: '0644'
+    content: |
+      [keyfile]
+      unmanaged-devices=interface-name:cali*;interface-name:flannel*
+  - path: /etc/profile.d/rke2containerd.sh
+    owner: root:root
+    permissions: '0644'
+    content: |
+      export CONTAINER_RUNTIME_ENDPOINT=unix:///var/run/k3s/containerd/containerd.sock
+      export IMAGE_SERVICE_ENDPOINT=unix:///var/run/k3s/containerd/containerd.sock
+      export PATH=$PATH:/var/lib/rancher/rke2/bin/
+
+runcmd:
+  - [ "yum", "-y", "yum-utils" ]
+  - [ "yum", "-y", "install", "pciutils", "unbound-libs", "httpd-tools", "python3", "audit-libs-python", "bash-completion", "libseccomp", "libsemanage-python", "policycoreutils-python", "python-IPy", "setools-libs", "tcpdump", "bind-utils" ]
+  - [ "pip3", "install", "-U", "pip" ]
+  - [ "pip3", "install", "requests", "boto3", "pyudev", "retrying" ]
+  - [ "mkdir", "-p", "/var/lib/rancher/rke2/agent/images"]
+  - [ "curl", "-L", "https://get.rke2.io", "-o", "/usr/bin/install-rke2.sh" ]
+  - [ "chmod", "+x", "/usr/bin/install-rke2.sh"]
+  - [ "touch", "/tmp/cloud-init-done"]
