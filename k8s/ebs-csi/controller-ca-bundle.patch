@@ -1,0 +1,21 @@
+--- aws-ebs-csi-driver/templates/controller.yaml
++++ aws-ebs-csi-driver/templates/controller.yaml
+@@ -118,6 +118,8 @@
+           volumeMounts:
+             - name: socket-dir
+               mountPath: /var/lib/csi/sockets/pluginproxy/
++            - name: ca-certificate-bundle
++              mountPath: /etc/ssl/certs
+           ports:
+             - name: healthz
+               containerPort: 9808
+@@ -261,3 +263,9 @@
+       volumes:
+         - name: socket-dir
+           emptyDir: {}
++        - name: ca-certificate-bundle
++          configMap:
++            name: zcompute-ca-certificates-bundle
++            items:
++              - key: ca-certificates.crt
++                path: ca-certificates.crt

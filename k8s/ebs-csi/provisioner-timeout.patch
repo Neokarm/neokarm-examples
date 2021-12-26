@@ -1,0 +1,10 @@
+--- aws-ebs-csi-driver/templates/controller.yaml
++++ aws-ebs-csi-driver/templates/controller.yaml
+@@ -154,6 +154,7 @@
+             {{- end}}
+             - --leader-election=true
+             - --default-fstype={{ .Values.controller.defaultFsType }}
++            - --timeout=180s
+           env:
+             - name: ADDRESS
+               value: /var/lib/csi/sockets/pluginproxy/csi.sock

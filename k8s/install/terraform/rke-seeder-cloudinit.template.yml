@@ -1,0 +1,56 @@
+#cloud-config
+write_files:
+  - path: /etc/rancher/rke2/config.yaml
+    owner: root:root
+    permissions: '0644'
+    content: |
+      write-kubeconfig-mode: "0644"
+      selinux: true
+      node-name: ${ hostname }
+      token: ${ random_uuid }      
+      tls-san:
+        %{~ for single_san in san ~}
+        - ${ single_san }
+        %{~ endfor ~}
+  - path: /etc/NetworkManager/conf.d/rke.conf
+    owner: root:root
+    permissions: '0644'
+    content: |
+      [keyfile]
+      unmanaged-devices=interface-name:cali*;interface-name:flannel*
+  - path: /etc/profile.d/rke2containerd.sh
+    owner: root:root
+    permissions: '0644'
+    content: |
+      export CONTAINER_RUNTIME_ENDPOINT=unix:///var/run/k3s/containerd/containerd.sock
+      export IMAGE_SERVICE_ENDPOINT=unix:///var/run/k3s/containerd/containerd.sock
+      export PATH=$PATH:/var/lib/rancher/rke2/bin/
+  - path: /usr/bin/wait_for_rke.sh
+    owner: root:root
+    permissions: '0700'
+    content: |
+      #!/bin/bash
+      set -x
+      PATH=$PATH:/var/lib/rancher/rke2/bin/
+      while [ true ]
+      do
+        KUBECONFIG=/etc/rancher/rke2/rke2.yaml kubectl get nodes
+        RET=$?
+        if [ $RET -ne 0 ]
+        then
+           echo "RKE Seeder Not ready yet"
+           sleep 10
+        else
+           echo "RKE Seeder Ready"
+           exit 0
+        fi
+      done
+runcmd:
+  - [ "yum", "-y", "yum-utils" ]
+  - [ "yum", "-y", "install", "pciutils", "unbound-libs", "httpd-tools", "python3", "audit-libs-python", "bash-completion", "libseccomp", "libsemanage-python", "policycoreutils-python", "python-IPy", "setools-libs", "tcpdump", "bind-utils" ]
+  - [ "pip3", "install", "-U", "pip" ]
+  - [ "pip3", "install", "requests", "boto3", "pyudev", "retrying" ]
+  - [ "mkdir", "-p", "/var/lib/rancher/rke2/agent/images"]
+  - [ "curl", "-L", "https://get.rke2.io", "-o", "/usr/bin/install-rke2.sh" ]
+  - [ "chmod", "+x", "/usr/bin/install-rke2.sh"]
+  - [ "touch", "/tmp/cloud-init-done"]
