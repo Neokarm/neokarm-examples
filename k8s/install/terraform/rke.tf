@@ -85,7 +85,7 @@ locals {
 resource "aws_instance" "rke_seeder" {
   depends_on = [aws_lb.rke_master_lb, aws_route_table_association.private, aws_route.private_nat_gateway]
   ami = var.ami_id
-  instance_type = "m5.large"
+  instance_type = var.server_instance_type
   user_data = templatefile("rke-seeder-cloudinit.template.yml", {
     random_uuid = random_uuid.random_cluster_id.result,
     hostname = "rke2-server-1.${aws_route53_zone.main.name}"
@@ -216,7 +216,7 @@ resource "aws_instance" "rke_servers" {
   depends_on = [aws_lb.rke_master_lb, aws_route_table_association.private, aws_route.private_nat_gateway, aws_instance.rke_seeder]
   count = var.rke_servers_count - 1
   ami = var.ami_id
-  instance_type = "m5.large"
+  instance_type = var.server_instance_type
   user_data = templatefile("rke-server-cloudinit.template.yml", {
     random_uuid = random_uuid.random_cluster_id.result,
     seeder_url = "https://${aws_instance.rke_seeder.private_ip}:9345",
@@ -321,7 +321,7 @@ resource "aws_instance" "rke_agents" {
   depends_on = [aws_lb.rke_master_lb, aws_route_table_association.private, aws_route.private_nat_gateway, aws_instance.rke_seeder]
   count = var.rke_agents_count
   ami = var.ami_id
-  instance_type = "m5.large"
+  instance_type = var.agent_instance_type
   user_data = templatefile("rke-agent-cloudinit.template.yml", {
     random_uuid = random_uuid.random_cluster_id.result,
     seeder_url = "https://${aws_instance.rke_seeder.private_ip}:9345",

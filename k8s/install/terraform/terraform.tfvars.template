@@ -1,6 +1,8 @@
-ssh_key_file = "<ssh_public_key_file_path>"
-ssh_private_key_file = "<ssh_public_key_file_path>"
+ssh_key_file = "./id_rsa.pub"
+ssh_private_key_file = "./id_rsa"
+
 # zCompute API IP/Host address e.g.:
-zcompute_api_ip = "<zcompute host name>"
+zcompute_api_ip = "zcompute.cloud.zadara.net"
+
 # A Centos 7.9 AMI id available to the project
-# ami_id = "ami-b3f150f6f0734fce873d3149e5fe28f7"
+ami_id = "ami-b3f150f6f0734fce873d3149e5fe28f7"
