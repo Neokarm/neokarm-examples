@@ -13,6 +13,10 @@ write_files:
         %{~ for single_san in san ~}
         - ${ single_san }
         %{~ endfor ~}
+      %{~ if taint_servers ~}
+      node-taint:
+        - "CriticalAddonsOnly=true:NoExecute"
+      %{~ endif ~}
   - path: /etc/NetworkManager/conf.d/rke.conf
     owner: root:root
     permissions: '0644'

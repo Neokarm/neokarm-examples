@@ -54,3 +54,9 @@ variable "agent_instance_type" {
   default = "z4.2xlarge"
   description = "K8s agent (worker) node instance type"
 }
+
+variable "taint_servers" {
+  default = true
+  type = bool
+  description = "If set to false, user workloads would run on K8s master nodes"
+}
