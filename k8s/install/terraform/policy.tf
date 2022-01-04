@@ -20,6 +20,6 @@ resource "aws_iam_role_policy_attachment" "ec2-fullaccess-policy" {
 }
 
 resource "aws_iam_instance_profile" "full_ec2_access_profile" {
-  name  = "instance-full-access-policy"
+  name = "instance-full-access-policy"
   role = aws_iam_role.ec2-full-access.name
 }

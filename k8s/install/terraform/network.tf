@@ -11,7 +11,7 @@ resource "aws_vpc" "vpc" {
 /*==== Subnets ======*/
 /* Internet gateway for the public subnet */
 resource "aws_internet_gateway" "ig" {
-  vpc_id = "${aws_vpc.vpc.id}"
+  vpc_id = aws_vpc.vpc.id
   tags = {
     Name        = "${var.environment}-igw"
     Environment = "${var.environment}"
@@ -24,8 +24,8 @@ resource "aws_eip" "nat_eip" {
 }
 /* NAT */
 resource "aws_nat_gateway" "nat" {
-  allocation_id = "${aws_eip.nat_eip.id}"
-  subnet_id     = "${aws_subnet.public_subnet.id}"
+  allocation_id = aws_eip.nat_eip.id
+  subnet_id     = aws_subnet.public_subnet.id
   depends_on    = [aws_route_table_association.public, aws_route.public_internet_gateway, aws_internet_gateway.ig]
   tags = {
     Name        = "nat"
@@ -39,7 +39,7 @@ resource "aws_nat_gateway" "nat" {
 }
 /* Public subnet */
 resource "aws_subnet" "public_subnet" {
-  vpc_id                  = "${aws_vpc.vpc.id}"
+  vpc_id                  = aws_vpc.vpc.id
   cidr_block              = "10.0.0.0/20"
   availability_zone       = "symphony"
   map_public_ip_on_launch = false
@@ -50,7 +50,7 @@ resource "aws_subnet" "public_subnet" {
 }
 /* Private subnet */
 resource "aws_subnet" "private_subnet" {
-  vpc_id                  = "${aws_vpc.vpc.id}"
+  vpc_id                  = aws_vpc.vpc.id
   cidr_block              = "10.0.16.0/20"
   availability_zone       = "symphony"
   map_public_ip_on_launch = false
@@ -61,7 +61,7 @@ resource "aws_subnet" "private_subnet" {
 }
 /* Routing table for private subnet */
 resource "aws_route_table" "private" {
-  vpc_id = "${aws_vpc.vpc.id}"
+  vpc_id = aws_vpc.vpc.id
   tags = {
     Name        = "${var.environment}-private-route-table"
     Environment = "${var.environment}"
@@ -69,36 +69,36 @@ resource "aws_route_table" "private" {
 }
 /* Routing table for public subnet */
 resource "aws_route_table" "public" {
-  vpc_id = "${aws_vpc.vpc.id}"
+  vpc_id = aws_vpc.vpc.id
   tags = {
     Name        = "${var.environment}-public-route-table"
     Environment = "${var.environment}"
   }
 }
 resource "aws_route" "public_internet_gateway" {
-  route_table_id         = "${aws_route_table.public.id}"
+  route_table_id         = aws_route_table.public.id
   destination_cidr_block = "0.0.0.0/0"
-  gateway_id             = "${aws_internet_gateway.ig.id}"
+  gateway_id             = aws_internet_gateway.ig.id
 }
 resource "aws_route" "private_nat_gateway" {
-  route_table_id         = "${aws_route_table.private.id}"
+  route_table_id         = aws_route_table.private.id
   destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id         = "${aws_nat_gateway.nat.id}"
+  nat_gateway_id         = aws_nat_gateway.nat.id
 }
 /* Route table associations */
 resource "aws_route_table_association" "public" {
-  subnet_id      = "${aws_subnet.public_subnet.id}"
-  route_table_id = "${aws_route_table.public.id}"
+  subnet_id      = aws_subnet.public_subnet.id
+  route_table_id = aws_route_table.public.id
 }
 resource "aws_route_table_association" "private" {
-  subnet_id      = "${aws_subnet.private_subnet.id}"
-  route_table_id = "${aws_route_table.private.id}"
+  subnet_id      = aws_subnet.private_subnet.id
+  route_table_id = aws_route_table.private.id
 }
 /*==== VPC's Default Security Group ======*/
 resource "aws_security_group" "default" {
   name        = "${var.environment}-default-sg"
   description = "Default security group to allow inbound/outbound from the VPC"
-  vpc_id      = "${aws_vpc.vpc.id}"
+  vpc_id      = aws_vpc.vpc.id
   depends_on  = [aws_vpc.vpc]
   ingress {
     from_port = "0"
@@ -113,9 +113,9 @@ resource "aws_security_group" "default" {
     self      = true
   }
   egress {
-    from_port = "0"
-    to_port   = "0"
-    protocol  = "-1"
+    from_port   = "0"
+    to_port     = "0"
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
   tags = {
@@ -125,12 +125,12 @@ resource "aws_security_group" "default" {
 resource "aws_security_group" "bastion_sg" {
   name        = "${var.environment}-bastion-sg"
   description = "Bastion security group to allow inbound SSH"
-  vpc_id      = "${aws_vpc.vpc.id}"
+  vpc_id      = aws_vpc.vpc.id
   depends_on  = [aws_vpc.vpc]
   ingress {
-    from_port = "22"
-    to_port   = "22"
-    protocol  = "tcp"
+    from_port   = "22"
+    to_port     = "22"
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
   tags = {

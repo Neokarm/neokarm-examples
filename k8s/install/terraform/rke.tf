@@ -1,11 +1,11 @@
 resource "random_uuid" "random_cluster_id" {}
 
 resource "aws_instance" "rke_bastion" {
-  ami = var.ami_id
+  ami           = var.ami_id
   instance_type = "t2.micro"
-  key_name = local.key_name
+  key_name      = local.key_name
 
-  subnet_id = aws_subnet.public_subnet.id
+  subnet_id              = aws_subnet.public_subnet.id
   vpc_security_group_ids = [aws_security_group.default.id, aws_security_group.bastion_sg.id]
   tags = {
     Name        = "${var.environment}-bastion"
@@ -13,9 +13,9 @@ resource "aws_instance" "rke_bastion" {
   }
 }
 resource "aws_eip_association" "rke_bastion_eip" {
-  depends_on = [aws_route_table_association.public, aws_route.public_internet_gateway]
+  depends_on           = [aws_route_table_association.public, aws_route.public_internet_gateway]
   network_interface_id = aws_instance.rke_bastion.primary_network_interface_id
-  allocation_id = aws_eip.bastion_eip.id
+  allocation_id        = aws_eip.bastion_eip.id
 }
 
 resource "aws_lb" "rke_master_lb" {
@@ -37,25 +37,25 @@ locals {
 
 resource "null_resource" "lb_ip_getter" {
   depends_on = [aws_eip_association.rke_bastion_eip,
-                aws_instance.rke_bastion,
-                aws_lb.rke_master_lb]
+    aws_instance.rke_bastion,
+  aws_lb.rke_master_lb]
 
   connection {
-    type = "ssh"
-    user = "centos"
+    type        = "ssh"
+    user        = "centos"
     private_key = file(local.private_key_file)
-    host = aws_eip.bastion_eip.public_ip
+    host        = aws_eip.bastion_eip.public_ip
   }
 
   provisioner "remote-exec" {
     inline = [
-        "sudo yum install -y bind-utils"
+      "sudo yum install -y bind-utils"
     ]
   }
 
   provisioner "remote-exec" {
     inline = [
-        "sudo dig ${local.rke_master_lb_hostname} +short > lb_ip.txt"
+      "sudo dig ${local.rke_master_lb_hostname} +short > lb_ip.txt"
     ]
   }
 
@@ -67,29 +67,29 @@ resource "null_resource" "lb_ip_getter" {
 
 data "local_file" "lb_private_ip" {
   depends_on = [null_resource.lb_ip_getter]
-  filename = "lb_ip.txt"
+  filename   = "lb_ip.txt"
 }
 
 data "aws_network_interface" "lb_interface" {
   filter {
-    name = "private-ip-address"
+    name   = "private-ip-address"
     values = [trimspace(data.local_file.lb_private_ip.content)]
   }
 }
 
 locals {
   lb_public_ip = one(data.aws_network_interface.lb_interface[*].association[0].public_ip)
-  rke_san = [aws_lb.rke_master_lb.dns_name, "${local.rke_master_lb_hostname}.symphony.local", local.rke_master_lb_hostname, local.lb_public_ip]
+  rke_san      = [aws_lb.rke_master_lb.dns_name, "${local.rke_master_lb_hostname}.symphony.local", local.rke_master_lb_hostname, local.lb_public_ip]
 }
 
 resource "aws_instance" "rke_seeder" {
-  depends_on = [aws_lb.rke_master_lb, aws_route_table_association.private, aws_route.private_nat_gateway]
-  ami = var.ami_id
+  depends_on    = [aws_lb.rke_master_lb, aws_route_table_association.private, aws_route.private_nat_gateway]
+  ami           = var.ami_id
   instance_type = var.server_instance_type
   user_data = templatefile("rke-seeder-cloudinit.template.yml", {
-    random_uuid = random_uuid.random_cluster_id.result,
-    hostname = "rke2-server-1.${aws_route53_zone.main.name}"
-    san = local.rke_san
+    random_uuid   = random_uuid.random_cluster_id.result,
+    hostname      = "rke2-server-1.${aws_route53_zone.main.name}"
+    san           = local.rke_san
     taint_servers = var.taint_servers
   })
   key_name = local.key_name
@@ -100,12 +100,12 @@ resource "aws_instance" "rke_seeder" {
       Name        = "${var.environment}-server-1"
       Environment = "${var.environment}"
     }
-    encrypted             = "false"
-    volume_size           = "250"
-    volume_type           = "gp3"
+    encrypted   = "false"
+    volume_size = "250"
+    volume_type = "gp3"
   }
 
-  subnet_id = aws_subnet.private_subnet.id
+  subnet_id              = aws_subnet.private_subnet.id
   vpc_security_group_ids = [aws_security_group.default.id]
 
   tags = {
@@ -121,30 +121,30 @@ resource "aws_instance" "rke_seeder" {
 
 resource "null_resource" "rke-seeder-provisioning" {
   depends_on = [aws_eip_association.rke_bastion_eip,
-                aws_instance.rke_seeder,
-                aws_instance.rke_bastion,
-                aws_route53_record.cluster]
+    aws_instance.rke_seeder,
+    aws_instance.rke_bastion,
+  aws_route53_record.cluster]
 
   connection {
-    type = "ssh"
-    bastion_host = aws_eip.bastion_eip.public_ip
-    bastion_user = "centos"
+    type                = "ssh"
+    bastion_host        = aws_eip.bastion_eip.public_ip
+    bastion_user        = "centos"
     bastion_private_key = file(local.private_key_file)
-    user = "centos"
-    private_key = file(local.private_key_file)
-    host = aws_instance.rke_seeder.private_ip
+    user                = "centos"
+    private_key         = file(local.private_key_file)
+    host                = aws_instance.rke_seeder.private_ip
   }
 
   provisioner "remote-exec" {
     inline = [
-        "while [ ! -f /tmp/cloud-init-done ]; do echo Waiting for cloud-init to finish; sleep 1; done",
-        "sleep 30"
+      "while [ ! -f /tmp/cloud-init-done ]; do echo Waiting for cloud-init to finish; sleep 1; done",
+      "sleep 30"
     ]
   }
 
   provisioner "remote-exec" {
     inline = [
-        "sudo bash -c \"grep -qxF 'kubelet-arg:' /etc/rancher/rke2/config.yaml || echo 'kubelet-arg: provider-id=ec2://symphony/${aws_instance.rke_seeder.id}' >> /etc/rancher/rke2/config.yaml\""
+      "sudo bash -c \"grep -qxF 'kubelet-arg:' /etc/rancher/rke2/config.yaml || echo 'kubelet-arg: provider-id=ec2://symphony/${aws_instance.rke_seeder.id}' >> /etc/rancher/rke2/config.yaml\""
     ]
   }
 
@@ -156,24 +156,24 @@ resource "null_resource" "rke-seeder-provisioning" {
   }
 
   provisioner "file" {
-    source = "../certificates/ca.crt"
+    source      = "../certificates/ca.crt"
     destination = "/tmp/${aws_route53_zone.main.name}.ca.crt"
   }
 
   provisioner "file" {
-    source = "../../extra/disk-mapper/symphony_disk_mapper.rules"
+    source      = "../../extra/disk-mapper/symphony_disk_mapper.rules"
     destination = "/tmp/symphony_disk_mapper.rules"
   }
 
   provisioner "remote-exec" {
     inline = [
-        "sudo cp /tmp/symphony_disk_mapper.py /usr/bin/symphony_disk_mapper.py",
-        "sudo cp /tmp/${aws_route53_zone.main.name}.ca.crt /usr/share/pki/ca-trust-source/anchors/",
-        "sudo cp /tmp/symphony_disk_mapper.rules /etc/udev/rules.d/symphony_disk_mapper.rules",
-        "sudo chmod +x /usr/bin/symphony_disk_mapper.py",
-        "sudo update-ca-trust",
-        "echo RKE Seeder > /tmp/i_was_here",
-        "while [ ! -x /usr/bin/install-rke2.sh ]; do echo rke2 installer not ready; sleep 1; done"
+      "sudo cp /tmp/symphony_disk_mapper.py /usr/bin/symphony_disk_mapper.py",
+      "sudo cp /tmp/${aws_route53_zone.main.name}.ca.crt /usr/share/pki/ca-trust-source/anchors/",
+      "sudo cp /tmp/symphony_disk_mapper.rules /etc/udev/rules.d/symphony_disk_mapper.rules",
+      "sudo chmod +x /usr/bin/symphony_disk_mapper.py",
+      "sudo update-ca-trust",
+      "echo RKE Seeder > /tmp/i_was_here",
+      "while [ ! -x /usr/bin/install-rke2.sh ]; do echo rke2 installer not ready; sleep 1; done"
     ]
   }
 
@@ -197,13 +197,13 @@ resource "null_resource" "wait-for-rke-seeder" {
   depends_on = [null_resource.rke-seeder-provisioning]
 
   connection {
-    type = "ssh"
-    bastion_host = aws_eip.bastion_eip.public_ip
-    bastion_user = "centos"
+    type                = "ssh"
+    bastion_host        = aws_eip.bastion_eip.public_ip
+    bastion_user        = "centos"
     bastion_private_key = file(local.private_key_file)
-    user = "centos"
-    private_key = file(local.private_key_file)
-    host = aws_instance.rke_seeder.private_ip
+    user                = "centos"
+    private_key         = file(local.private_key_file)
+    host                = aws_instance.rke_seeder.private_ip
   }
 
   provisioner "remote-exec" {
@@ -214,19 +214,19 @@ resource "null_resource" "wait-for-rke-seeder" {
 }
 
 resource "aws_instance" "rke_servers" {
-  depends_on = [aws_lb.rke_master_lb, aws_route_table_association.private, aws_route.private_nat_gateway, aws_instance.rke_seeder]
-  count = var.rke_servers_count - 1
-  ami = var.ami_id
+  depends_on    = [aws_lb.rke_master_lb, aws_route_table_association.private, aws_route.private_nat_gateway, aws_instance.rke_seeder]
+  count         = var.rke_servers_count - 1
+  ami           = var.ami_id
   instance_type = var.server_instance_type
   user_data = templatefile("rke-server-cloudinit.template.yml", {
-    random_uuid = random_uuid.random_cluster_id.result,
-    seeder_url = "https://${aws_instance.rke_seeder.private_ip}:9345",
-    san = local.rke_san
-    hostname = "rke2-server-${count.index + 2}.${aws_route53_zone.main.name}"
+    random_uuid   = random_uuid.random_cluster_id.result,
+    seeder_url    = "https://${aws_instance.rke_seeder.private_ip}:9345",
+    san           = local.rke_san
+    hostname      = "rke2-server-${count.index + 2}.${aws_route53_zone.main.name}"
     taint_servers = var.taint_servers
   })
 
-  key_name = local.key_name
+  key_name             = local.key_name
   iam_instance_profile = aws_iam_instance_profile.full_ec2_access_profile.name
 
   root_block_device {
@@ -235,12 +235,12 @@ resource "aws_instance" "rke_servers" {
       Name        = "${var.environment}-server-${count.index + 2}"
       Environment = "${var.environment}"
     }
-    encrypted = "false"
+    encrypted   = "false"
     volume_size = "250"
     volume_type = "gp3"
   }
 
-  subnet_id = aws_subnet.private_subnet.id
+  subnet_id              = aws_subnet.private_subnet.id
   vpc_security_group_ids = [aws_security_group.default.id]
   tags = {
     Name        = "${var.environment}-server-${count.index + 2}"
@@ -254,30 +254,30 @@ resource "aws_instance" "rke_servers" {
 
 resource "null_resource" "rke-servers-provisioner" {
   depends_on = [aws_instance.rke_servers, null_resource.wait-for-rke-seeder]
-  count = var.rke_servers_count - 1
+  count      = var.rke_servers_count - 1
   triggers = {
     run = aws_instance.rke_servers[count.index].id
   }
   connection {
-    type = "ssh"
-    bastion_host = aws_eip.bastion_eip.public_ip
-    bastion_user = "centos"
+    type                = "ssh"
+    bastion_host        = aws_eip.bastion_eip.public_ip
+    bastion_user        = "centos"
     bastion_private_key = file(local.private_key_file)
-    user = "centos"
-    private_key = file(local.private_key_file)
-    host = aws_instance.rke_servers[count.index].private_ip
+    user                = "centos"
+    private_key         = file(local.private_key_file)
+    host                = aws_instance.rke_servers[count.index].private_ip
   }
 
   provisioner "remote-exec" {
     inline = [
-        "while [ ! -f /tmp/cloud-init-done ]; do echo Waiting for cloud-init to finish; sleep 1; done",
-        "sleep 30"
+      "while [ ! -f /tmp/cloud-init-done ]; do echo Waiting for cloud-init to finish; sleep 1; done",
+      "sleep 30"
     ]
   }
 
   provisioner "remote-exec" {
     inline = [
-        "sudo bash -c \"grep -qxF 'kubelet-arg:' /etc/rancher/rke2/config.yaml || echo 'kubelet-arg: provider-id=ec2://symphony/${aws_instance.rke_servers[count.index].id}' >> /etc/rancher/rke2/config.yaml\""
+      "sudo bash -c \"grep -qxF 'kubelet-arg:' /etc/rancher/rke2/config.yaml || echo 'kubelet-arg: provider-id=ec2://symphony/${aws_instance.rke_servers[count.index].id}' >> /etc/rancher/rke2/config.yaml\""
     ]
   }
 
@@ -289,24 +289,24 @@ resource "null_resource" "rke-servers-provisioner" {
   }
 
   provisioner "file" {
-    source = "../certificates/ca.crt"
+    source      = "../certificates/ca.crt"
     destination = "/tmp/${aws_route53_zone.main.name}.ca.crt"
   }
 
   provisioner "file" {
-    source = "../../extra/disk-mapper/symphony_disk_mapper.rules"
+    source      = "../../extra/disk-mapper/symphony_disk_mapper.rules"
     destination = "/tmp/symphony_disk_mapper.rules"
   }
 
   provisioner "remote-exec" {
     inline = [
-        "sudo cp /tmp/symphony_disk_mapper.py /usr/bin/symphony_disk_mapper.py",
-        "sudo cp /tmp/${aws_route53_zone.main.name}.ca.crt /usr/share/pki/ca-trust-source/anchors/",
-        "sudo cp /tmp/symphony_disk_mapper.rules /etc/udev/rules.d/symphony_disk_mapper.rules",
-        "sudo chmod +x /usr/bin/symphony_disk_mapper.py",
-        "sudo update-ca-trust",
-        "echo RKE Seeder > /tmp/i_was_here",
-        "while [ ! -x /usr/bin/install-rke2.sh ]; do echo rke2 installer not ready; sleep 1; done"
+      "sudo cp /tmp/symphony_disk_mapper.py /usr/bin/symphony_disk_mapper.py",
+      "sudo cp /tmp/${aws_route53_zone.main.name}.ca.crt /usr/share/pki/ca-trust-source/anchors/",
+      "sudo cp /tmp/symphony_disk_mapper.rules /etc/udev/rules.d/symphony_disk_mapper.rules",
+      "sudo chmod +x /usr/bin/symphony_disk_mapper.py",
+      "sudo update-ca-trust",
+      "echo RKE Seeder > /tmp/i_was_here",
+      "while [ ! -x /usr/bin/install-rke2.sh ]; do echo rke2 installer not ready; sleep 1; done"
     ]
   }
 
@@ -320,18 +320,18 @@ resource "null_resource" "rke-servers-provisioner" {
 }
 
 resource "aws_instance" "rke_agents" {
-  depends_on = [aws_lb.rke_master_lb, aws_route_table_association.private, aws_route.private_nat_gateway, aws_instance.rke_seeder]
-  count = var.rke_agents_count
-  ami = var.ami_id
+  depends_on    = [aws_lb.rke_master_lb, aws_route_table_association.private, aws_route.private_nat_gateway, aws_instance.rke_seeder]
+  count         = var.rke_agents_count
+  ami           = var.ami_id
   instance_type = var.agent_instance_type
   user_data = templatefile("rke-agent-cloudinit.template.yml", {
     random_uuid = random_uuid.random_cluster_id.result,
-    seeder_url = "https://${aws_instance.rke_seeder.private_ip}:9345",
-    san = local.rke_san
-    hostname = "rke2-agent-${count.index + 1}.${aws_route53_zone.main.name}"
+    seeder_url  = "https://${aws_instance.rke_seeder.private_ip}:9345",
+    san         = local.rke_san
+    hostname    = "rke2-agent-${count.index + 1}.${aws_route53_zone.main.name}"
   })
 
-  key_name = local.key_name
+  key_name             = local.key_name
   iam_instance_profile = aws_iam_instance_profile.full_ec2_access_profile.name
 
   root_block_device {
@@ -340,12 +340,12 @@ resource "aws_instance" "rke_agents" {
       Name        = "${var.environment}-agent-${count.index + 1}"
       Environment = "${var.environment}"
     }
-    encrypted = "false"
+    encrypted   = "false"
     volume_size = "250"
     volume_type = "gp3"
   }
 
-  subnet_id = aws_subnet.private_subnet.id
+  subnet_id              = aws_subnet.private_subnet.id
   vpc_security_group_ids = [aws_security_group.default.id]
   tags = {
     Name        = "${var.environment}-agent-${count.index + 1}"
@@ -359,30 +359,30 @@ resource "aws_instance" "rke_agents" {
 
 resource "null_resource" "rke-agents-provisioner" {
   depends_on = [aws_instance.rke_agents, null_resource.wait-for-rke-seeder]
-  count = var.rke_agents_count
+  count      = var.rke_agents_count
   triggers = {
     run = aws_instance.rke_agents[count.index].id
   }
   connection {
-    type = "ssh"
-    bastion_host = aws_eip.bastion_eip.public_ip
-    bastion_user = "centos"
+    type                = "ssh"
+    bastion_host        = aws_eip.bastion_eip.public_ip
+    bastion_user        = "centos"
     bastion_private_key = file(local.private_key_file)
-    user = "centos"
-    private_key = file(local.private_key_file)
-    host = aws_instance.rke_agents[count.index].private_ip
+    user                = "centos"
+    private_key         = file(local.private_key_file)
+    host                = aws_instance.rke_agents[count.index].private_ip
   }
 
   provisioner "remote-exec" {
     inline = [
-        "while [ ! -f /tmp/cloud-init-done ]; do echo Waiting for cloud-init to finish; sleep 1; done",
-        "sleep 30"
+      "while [ ! -f /tmp/cloud-init-done ]; do echo Waiting for cloud-init to finish; sleep 1; done",
+      "sleep 30"
     ]
   }
 
   provisioner "remote-exec" {
     inline = [
-        "sudo bash -c \"grep -qxF 'kubelet-arg:' /etc/rancher/rke2/config.yaml || echo 'kubelet-arg: provider-id=ec2://symphony/${aws_instance.rke_agents[count.index].id}' >> /etc/rancher/rke2/config.yaml\""
+      "sudo bash -c \"grep -qxF 'kubelet-arg:' /etc/rancher/rke2/config.yaml || echo 'kubelet-arg: provider-id=ec2://symphony/${aws_instance.rke_agents[count.index].id}' >> /etc/rancher/rke2/config.yaml\""
     ]
   }
 
@@ -394,24 +394,24 @@ resource "null_resource" "rke-agents-provisioner" {
   }
 
   provisioner "file" {
-    source = "../certificates/ca.crt"
+    source      = "../certificates/ca.crt"
     destination = "/tmp/${aws_route53_zone.main.name}.ca.crt"
   }
 
   provisioner "file" {
-    source = "../../extra/disk-mapper/symphony_disk_mapper.rules"
+    source      = "../../extra/disk-mapper/symphony_disk_mapper.rules"
     destination = "/tmp/symphony_disk_mapper.rules"
   }
 
   provisioner "remote-exec" {
     inline = [
-        "sudo cp /tmp/symphony_disk_mapper.py /usr/bin/symphony_disk_mapper.py",
-        "sudo cp /tmp/${aws_route53_zone.main.name}.ca.crt /usr/share/pki/ca-trust-source/anchors/",
-        "sudo cp /tmp/symphony_disk_mapper.rules /etc/udev/rules.d/symphony_disk_mapper.rules",
-        "sudo chmod +x /usr/bin/symphony_disk_mapper.py",
-        "sudo update-ca-trust",
-        "echo RKE Seeder > /tmp/i_was_here",
-        "while [ ! -x /usr/bin/install-rke2.sh ]; do echo rke2 installer not ready; sleep 1; done"
+      "sudo cp /tmp/symphony_disk_mapper.py /usr/bin/symphony_disk_mapper.py",
+      "sudo cp /tmp/${aws_route53_zone.main.name}.ca.crt /usr/share/pki/ca-trust-source/anchors/",
+      "sudo cp /tmp/symphony_disk_mapper.rules /etc/udev/rules.d/symphony_disk_mapper.rules",
+      "sudo chmod +x /usr/bin/symphony_disk_mapper.py",
+      "sudo update-ca-trust",
+      "echo RKE Seeder > /tmp/i_was_here",
+      "while [ ! -x /usr/bin/install-rke2.sh ]; do echo rke2 installer not ready; sleep 1; done"
     ]
   }
 
@@ -426,15 +426,15 @@ resource "null_resource" "rke-agents-provisioner" {
 
 resource "null_resource" "rke2-config" {
   depends_on = [null_resource.wait-for-rke-seeder]
-  
+
   connection {
-    type = "ssh"
-    user = "centos"
+    type        = "ssh"
+    user        = "centos"
     private_key = file(local.private_key_file)
-    host = aws_eip.bastion_eip.public_ip
+    host        = aws_eip.bastion_eip.public_ip
   }
   provisioner "file" {
-    content = file(local.private_key_file)
+    content     = file(local.private_key_file)
     destination = "/home/centos/private_key"
   }
   provisioner "remote-exec" {
@@ -488,7 +488,7 @@ resource "aws_route53_record" "rke-seeder" {
 }
 
 resource "aws_route53_record" "rke-servers" {
-  count = var.rke_servers_count - 1
+  count   = var.rke_servers_count - 1
   zone_id = aws_route53_zone.main.zone_id
   name    = "rke2-server-${count.index + 2}.${aws_route53_zone.main.name}"
   type    = "A"
@@ -497,7 +497,7 @@ resource "aws_route53_record" "rke-servers" {
 }
 
 resource "aws_route53_record" "rke-agents" {
-  count = var.rke_agents_count
+  count   = var.rke_agents_count
   zone_id = aws_route53_zone.main.zone_id
   name    = "rke2-agent-${count.index + 1}.${aws_route53_zone.main.name}"
   type    = "A"
