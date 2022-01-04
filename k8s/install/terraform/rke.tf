@@ -90,6 +90,7 @@ resource "aws_instance" "rke_seeder" {
     random_uuid = random_uuid.random_cluster_id.result,
     hostname = "rke2-server-1.${aws_route53_zone.main.name}"
     san = local.rke_san
+    taint_servers = var.taint_servers
   })
   key_name = local.key_name
 
@@ -222,6 +223,7 @@ resource "aws_instance" "rke_servers" {
     seeder_url = "https://${aws_instance.rke_seeder.private_ip}:9345",
     san = local.rke_san
     hostname = "rke2-server-${count.index + 2}.${aws_route53_zone.main.name}"
+    taint_servers = var.taint_servers
   })
 
   key_name = local.key_name
