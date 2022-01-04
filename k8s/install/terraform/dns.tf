@@ -20,39 +20,39 @@ resource "aws_route53_zone" "arpa" {
 }
 
 resource "aws_route53_record" "soa_arpa" {
-  zone_id = aws_route53_zone.arpa.zone_id
+  zone_id         = aws_route53_zone.arpa.zone_id
   allow_overwrite = true
-  name    = aws_route53_zone.arpa.name
-  type    = "SOA"
-  ttl     = "300"
-  records = ["ns-15.arpa.net. hostmaster.arpa.net. 1 7200 900 1209600 86400"]
+  name            = aws_route53_zone.arpa.name
+  type            = "SOA"
+  ttl             = "300"
+  records         = ["ns-15.arpa.net. hostmaster.arpa.net. 1 7200 900 1209600 86400"]
 }
 
 resource "aws_route53_record" "ns_arpa" {
-  zone_id = aws_route53_zone.arpa.zone_id
+  zone_id         = aws_route53_zone.arpa.zone_id
   allow_overwrite = true
-  name    = aws_route53_zone.arpa.name
-  type    = "NS"
-  ttl     = "300"
-  records = ["ns.arpa.net."]
+  name            = aws_route53_zone.arpa.name
+  type            = "NS"
+  ttl             = "300"
+  records         = ["ns.arpa.net."]
 }
 
 resource "aws_route53_record" "soa" {
-  zone_id = aws_route53_zone.main.zone_id
+  zone_id         = aws_route53_zone.main.zone_id
   allow_overwrite = true
-  name    = aws_route53_zone.main.name
-  type    = "SOA"
-  ttl     = "300"
-  records = ["ns-15.zadara.net. hostmaster.zadara.net. 1 7200 900 1209600 86400"]
+  name            = aws_route53_zone.main.name
+  type            = "SOA"
+  ttl             = "300"
+  records         = ["ns-15.zadara.net. hostmaster.zadara.net. 1 7200 900 1209600 86400"]
 }
 
 resource "aws_route53_record" "ns" {
-  zone_id = aws_route53_zone.main.zone_id
+  zone_id         = aws_route53_zone.main.zone_id
   allow_overwrite = true
-  name    = aws_route53_zone.main.name
-  type    = "NS"
-  ttl     = "300"
-  records = ["ns.zadara.net."]
+  name            = aws_route53_zone.main.name
+  type            = "NS"
+  ttl             = "300"
+  records         = ["ns.zadara.net."]
 }
 
 locals {
@@ -61,15 +61,15 @@ locals {
 
 data "dns_a_record_set" "cluster_host_to_resolve" {
   count = local.zcompute_api_is_hostname
-  host = var.zcloud_hostname
+  host  = var.zcloud_hostname
 }
 
-resource aws_route53_record cluster {
-  count = var.use_route53_for_cluster_dns_resolution ? 1 : 0
-  zone_id = aws_route53_zone.main.zone_id
+resource "aws_route53_record" "cluster" {
+  count           = var.use_route53_for_cluster_dns_resolution ? 1 : 0
+  zone_id         = aws_route53_zone.main.zone_id
   allow_overwrite = true
-  name = var.zcloud_hostname
-  type = "A"
-  records = data.dns_a_record_set.cluster_host_to_resolve[0].addrs
-  ttl = "300"
+  name            = var.zcloud_hostname
+  type            = "A"
+  records         = data.dns_a_record_set.cluster_host_to_resolve[0].addrs
+  ttl             = "300"
 }
