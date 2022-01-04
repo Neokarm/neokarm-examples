@@ -9,7 +9,7 @@ zCompute's AWS API can be leveraged to be used with AWS EBS CSI driver to provis
 | Static Provisioning  |         ✅         |
 | Dynamic Provisioning |         ✅         |
 |     Block Volume     |         ✅         |
-|   Volume Resizing    | ❌ (✅ on v22.02+) |
+|   Volume Resizing    | ❌ (✅ on v22.05+) |
 |   Volume Snapshot    |   🟡 (Untested)    |
 |         NVMe         |   🟡 (Untested)    |
 |    Mount Options     |   🟡 (Untested)    |
