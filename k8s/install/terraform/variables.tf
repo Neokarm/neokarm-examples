@@ -44,3 +44,13 @@ variable "use_route53_for_cluster_dns_resolution" {
 variable "rke_version" {
   default = "v1.21.5~rke2r1"
 }
+
+variable "server_instance_type" {
+  default = "z4.xlarge"
+  description = "K8s server (master) node instance type"
+}
+
+variable "agent_instance_type" {
+  default = "z4.2xlarge"
+  description = "K8s agent (worker) node instance type"
+}
