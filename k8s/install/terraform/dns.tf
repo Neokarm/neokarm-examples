@@ -55,21 +55,11 @@ resource "aws_route53_record" "ns" {
   records         = ["ns.zadara.net."]
 }
 
-locals {
-  zcompute_api_is_hostname = length(regexall("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.zcompute_api_ip)) > 0 ? 0 : 1
-}
-
-data "dns_a_record_set" "cluster_host_to_resolve" {
-  count = local.zcompute_api_is_hostname
-  host  = var.zcloud_hostname
-}
-
 resource "aws_route53_record" "cluster" {
-  count           = var.use_route53_for_cluster_dns_resolution ? 1 : 0
   zone_id         = aws_route53_zone.main.zone_id
   allow_overwrite = true
   name            = var.zcloud_hostname
   type            = "A"
-  records         = data.dns_a_record_set.cluster_host_to_resolve[0].addrs
+  records         = [var.zcompute_api_ip]
   ttl             = "300"
 }
