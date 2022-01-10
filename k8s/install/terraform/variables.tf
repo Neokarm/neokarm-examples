@@ -10,7 +10,7 @@ variable "zcloud_zone" {
 }
 variable "zcloud_hostname" {
   description = "Hostname of the zCompute cluster - {zcloud_hostname} should match the cluster certificate"
-  default     = "zcompute.cloud.zadara.net"
+  default     = "cloud.zadara.net"
 }
 variable "zcompute_api_ip" {
   description = "IP of the zCompute cluster API endpoint"
@@ -34,11 +34,6 @@ variable "rke_agents_count" {
 
 variable "ami_id" {
   description = "ID (in AWS format) of the AMI to be used for the kubernetes nodes"
-}
-
-variable "use_route53_for_cluster_dns_resolution" {
-  description = "Create the cluster in the VPC Private zone"
-  default     = false
 }
 
 variable "rke_version" {
