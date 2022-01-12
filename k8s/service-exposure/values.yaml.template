@@ -1,0 +1,20 @@
+# Requried by the chart
+clusterName: rke-zcompute-cluster
+imagePullSecrets:
+  - name: aws-ecr-pull-secret
+
+# Required for zCompute
+awsApiEndpoints: "ec2=https://${zcompute-hostname}/api/v2/aws/ec2,elasticloadbalancing=https://${zcompute-hostname}/api/v2/aws/elbv2,acm=https://${zcompute-hostname}/api/v2/aws/acm,sts=http://${zcompute-hostname}/api/v2/aws/sts"
+enableShield: false
+enableWaf: false
+enableWafv2: false
+extraVolumeMounts:
+  - name: ca-certificate-bundle
+    mountPath: /etc/ssl/certs
+extraVolumes:
+  - name: ca-certificate-bundle
+    configMap:
+      name: zcompute-ca-certificates-bundle
+      items:
+        - key: ca-certificates.crt
+          path: ca-certificates.crt

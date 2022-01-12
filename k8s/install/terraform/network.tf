@@ -44,8 +44,9 @@ resource "aws_subnet" "public_subnet" {
   availability_zone       = "symphony"
   map_public_ip_on_launch = false
   tags = {
-    Name        = "${var.environment}-public-subnet"
-    Environment = "${var.environment}"
+    Name                     = "${var.environment}-public-subnet"
+    Environment              = "${var.environment}"
+    "kubernetes.io/role/elb" = 1
   }
 }
 /* Private subnet */
@@ -55,8 +56,9 @@ resource "aws_subnet" "private_subnet" {
   availability_zone       = "symphony"
   map_public_ip_on_launch = false
   tags = {
-    Name        = "${var.environment}-private-subnet"
-    Environment = "${var.environment}"
+    Name                              = "${var.environment}-private-subnet"
+    Environment                       = "${var.environment}"
+    "kubernetes.io/role/internal-elb" = 1
   }
 }
 /* Routing table for private subnet */
