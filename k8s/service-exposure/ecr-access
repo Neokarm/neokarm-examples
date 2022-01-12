@@ -1,0 +1,16 @@
+#!/bin/bash
+mkdir -p /tmp/ecr-access
+docker --config /tmp/ecr-access/ login --username AWS --password $(aws ecr get-login-password --region us-west-2) 602401143452.dkr.ecr.us-west-2.amazonaws.com
+DOCKERCONFIG=$(cat /tmp/ecr-access/config.json | base64 -w 0)
+echo "Docker config secret content: $DOCKERCONFIG"
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aws-ecr-pull-secret
+  namespace: kube-system
+data:
+  .dockerconfigjson: $DOCKERCONFIG
+type: kubernetes.io/dockerconfigjson
+EOF
+rm -rf /tmp/ecr-access

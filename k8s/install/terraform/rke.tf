@@ -468,11 +468,11 @@ output "rke_bastion_eip" {
 }
 
 output "rke_server_ips" {
-  value = concat([aws_instance.rke_seeder.public_ip], aws_instance.rke_servers[*].public_ip)
+  value = concat([aws_instance.rke_seeder.private_ip], aws_instance.rke_servers[*].private_ip)
 }
 
 output "rke_agent_ips" {
-  value = aws_instance.rke_agents[*].public_ip
+  value = aws_instance.rke_agents[*].private_ip
 }
 
 output "rke_config_filename" {
