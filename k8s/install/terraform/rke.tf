@@ -545,3 +545,55 @@ resource "aws_lb_target_group_attachment" "rke-master-tg-servers-attachment" {
 #   port              = 6443
 #   protocol          = "TCP"
 # }
+resource "null_resource" "helm_config" {
+  count  = "${var.bgp_enabled == true ? 1 : 0}"
+  depends_on = [aws_lb_target_group_attachment.rke-master-tg-servers-attachment]
+  connection {
+    type                = "ssh"
+    bastion_host        = aws_eip.bastion_eip.public_ip
+    bastion_user        = "centos"
+    bastion_private_key = file(local.private_key_file)
+    user                = "centos"
+    private_key         = file(local.private_key_file)
+    host                = aws_instance.rke_seeder.private_ip
+  }
+  provisioner "file" {
+    content = templatefile("rke2-calico-patch-config.template.yaml", {
+      bgp = "Enabled",
+      calico_cidr = "${var.calico-cidr}"
+    })
+    destination = "/tmp/rke2-calico-patch.yaml"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo cp /tmp/rke2-calico-patch.yaml /var/lib/rancher/rke2/server/manifests/rke2-calico-patch.yaml"
+    ]
+  }
+}
+resource "null_resource" "helm_config" {
+  count  = "${var.bgp_enabled == true ? var.rke_servers_count - 1 : 0}"
+  depends_on = [aws_lb_target_group_attachment.rke-master-tg-servers-attachment]
+  connection {
+    type                = "ssh"
+    bastion_host        = aws_eip.bastion_eip.public_ip
+    bastion_user        = "centos"
+    bastion_private_key = file(local.private_key_file)
+    user                = "centos"
+    private_key         = file(local.private_key_file)
+    host                = aws_instance.rke_servers[count.index].private_ip
+  }
+  provisioner "file" {
+    content = templatefile("rke2-calico-patch-config.template.yaml", {
+      bgp = "Enabled",
+      calico_cidr = "${var.calico-cidr}"
+    })
+    destination = "/tmp/rke2-calico-patch.yaml"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo cp /tmp/rke2-calico-patch.yaml /var/lib/rancher/rke2/server/manifests/rke2-calico-patch.yaml"
+    ]
+  }
+}

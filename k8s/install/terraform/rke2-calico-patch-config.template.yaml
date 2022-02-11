@@ -1,0 +1,15 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: rke2-calico
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    installation:
+      calicoNetwork:
+        bgp: {bgp}
+        ipPools:
+        - blockSize: 24
+          cidr: {calico_cidr}
+          encapsulation: None
+          natOutgoing: Disabled
