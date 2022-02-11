@@ -55,3 +55,17 @@ variable "taint_servers" {
   type        = bool
   description = "If set to false, user workloads would run on K8s master nodes"
 }
+
+variable "cni" {
+  default     = "calico"
+  description = "cni options that rancher supports"
+}
+variable "bgp_enabled" {
+  default     = false
+  type        = bool
+  description = "Activate Calico bgp piering"
+}
+variable "calico-cidr" {
+  default     = "10.42.0.0/16"
+  description = "cidr for initial calico ippool"
+}

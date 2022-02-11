@@ -6,6 +6,7 @@ write_files:
     content: |
       write-kubeconfig-mode: "0644"
       selinux: true
+      cni: ${cni}
       node-name: ${ hostname }
       token: ${ random_uuid }      
       tls-san:
