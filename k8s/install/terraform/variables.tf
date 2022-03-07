@@ -1,7 +1,6 @@
-
 variable "environment" {
   description = "Label to be used for tags and resource names for identification"
-  default     = "rke"
+  default     = "default"
 }
 
 variable "zcloud_zone" {
@@ -13,13 +12,19 @@ variable "zcloud_hostname" {
   default     = "cloud.zadara.net"
 }
 variable "zcompute_api_ip" {
+  type        = string
   description = "IP of the zCompute cluster API endpoint"
+
+  validation {
+    condition     = can(regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.zcompute_api_ip))
+    error_message = "The zcompute_api_ip value must be a valid IP address."
+  }
 }
 
-variable "ssh_key_file" {
+variable "ssh_public_key_file_path" {
   description = "SSH public key file for kubernetes node SSH access"
 }
-variable "ssh_private_key_file" {
+variable "ssh_key_file_path" {
   description = "SSH private key file for kubernetes node SSH access"
 }
 

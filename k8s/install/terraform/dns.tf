@@ -43,7 +43,7 @@ resource "aws_route53_record" "soa" {
   name            = aws_route53_zone.main.name
   type            = "SOA"
   ttl             = "300"
-  records         = ["ns-15.zadara.net. hostmaster.zadara.net. 1 7200 900 1209600 86400"]
+  records         = ["ns-15.${aws_route53_zone.main.name}. hostmaster.${aws_route53_zone.main.name}. 1 7200 900 1209600 86400"]
 }
 
 resource "aws_route53_record" "ns" {
@@ -52,7 +52,7 @@ resource "aws_route53_record" "ns" {
   name            = aws_route53_zone.main.name
   type            = "NS"
   ttl             = "300"
-  records         = ["ns.zadara.net."]
+  records         = ["ns.${aws_route53_zone.main.name}."]
 }
 
 resource "aws_route53_record" "cluster" {
