@@ -7,9 +7,9 @@ spec:
   valuesContent: |-
     installation:
       calicoNetwork:
-        bgp: {bgp}
+        bgp: ${ bgp }
         ipPools:
         - blockSize: 24
-          cidr: {calico_cidr}
+          cidr: ${ calico_cidr }
           encapsulation: None
           natOutgoing: Disabled

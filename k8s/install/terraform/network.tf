@@ -4,7 +4,7 @@ resource "aws_vpc" "vpc" {
   enable_dns_hostnames = true
   enable_dns_support   = true
   tags = {
-    Name        = "${var.environment}-vpc"
+    Name        = "rke-${var.environment}-vpc"
     Environment = "${var.environment}"
   }
 }
@@ -13,7 +13,7 @@ resource "aws_vpc" "vpc" {
 resource "aws_internet_gateway" "ig" {
   vpc_id = aws_vpc.vpc.id
   tags = {
-    Name        = "${var.environment}-igw"
+    Name        = "rke-${var.environment}-igw"
     Environment = "${var.environment}"
   }
 }
@@ -28,7 +28,7 @@ resource "aws_nat_gateway" "nat" {
   subnet_id     = aws_subnet.public_subnet.id
   depends_on    = [aws_route_table_association.public, aws_route.public_internet_gateway, aws_internet_gateway.ig]
   tags = {
-    Name        = "nat"
+    Name        = "rke-${var.environment}-nat"
     Environment = "${var.environment}"
   }
   lifecycle {
@@ -44,7 +44,7 @@ resource "aws_subnet" "public_subnet" {
   availability_zone       = "symphony"
   map_public_ip_on_launch = false
   tags = {
-    Name                     = "${var.environment}-public-subnet"
+    Name                     = "rke-${var.environment}-public-subnet"
     Environment              = "${var.environment}"
     "kubernetes.io/role/elb" = 1
   }
@@ -56,7 +56,7 @@ resource "aws_subnet" "private_subnet" {
   availability_zone       = "symphony"
   map_public_ip_on_launch = false
   tags = {
-    Name                              = "${var.environment}-private-subnet"
+    Name                              = "rke-${var.environment}-private-subnet"
     Environment                       = "${var.environment}"
     "kubernetes.io/role/internal-elb" = 1
   }
@@ -65,7 +65,7 @@ resource "aws_subnet" "private_subnet" {
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.vpc.id
   tags = {
-    Name        = "${var.environment}-private-route-table"
+    Name        = "rke-${var.environment}-private-route-table"
     Environment = "${var.environment}"
   }
 }
@@ -73,7 +73,7 @@ resource "aws_route_table" "private" {
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.vpc.id
   tags = {
-    Name        = "${var.environment}-public-route-table"
+    Name        = "rke-${var.environment}-public-route-table"
     Environment = "${var.environment}"
   }
 }
@@ -98,7 +98,7 @@ resource "aws_route_table_association" "private" {
 }
 /*==== VPC's Default Security Group ======*/
 resource "aws_security_group" "default" {
-  name        = "${var.environment}-default-sg"
+  name        = "rke-${var.environment}-default-sg"
   description = "Default security group to allow inbound/outbound from the VPC"
   vpc_id      = aws_vpc.vpc.id
   depends_on  = [aws_vpc.vpc]
@@ -125,7 +125,7 @@ resource "aws_security_group" "default" {
   }
 }
 resource "aws_security_group" "bastion_sg" {
-  name        = "${var.environment}-bastion-sg"
+  name        = "rke-${var.environment}-bastion-sg"
   description = "Bastion security group to allow inbound SSH"
   vpc_id      = aws_vpc.vpc.id
   depends_on  = [aws_vpc.vpc]

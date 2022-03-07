@@ -8,7 +8,7 @@ resource "aws_instance" "rke_bastion" {
   subnet_id              = aws_subnet.public_subnet.id
   vpc_security_group_ids = [aws_security_group.default.id, aws_security_group.bastion_sg.id]
   tags = {
-    Name        = "${var.environment}-bastion"
+    Name        = "rke-${var.environment}-bastion"
     Environment = "${var.environment}"
   }
 }
@@ -20,13 +20,13 @@ resource "aws_eip_association" "rke_bastion_eip" {
 
 resource "aws_lb" "rke_master_lb" {
   depends_on         = [aws_route_table_association.public, aws_route.public_internet_gateway, aws_internet_gateway.ig]
-  name               = "${var.environment}-master-lb"
+  name               = "rke-${var.environment}-master-lb"
   internal           = false
   load_balancer_type = "network"
   subnets            = [aws_subnet.public_subnet.id]
   security_groups    = [aws_security_group.default.id]
   tags = {
-    Name        = "${var.environment}-master-lb"
+    Name        = "rke-${var.environment}-master-lb"
     Environment = "${var.environment}"
   }
 }
@@ -86,18 +86,19 @@ resource "aws_instance" "rke_seeder" {
   depends_on    = [aws_lb.rke_master_lb, aws_route_table_association.private, aws_route.private_nat_gateway]
   ami           = var.ami_id
   instance_type = var.server_instance_type
-  user_data = templatefile("rke-seeder-cloudinit.template.yml", {
+  user_data = templatefile("templates/rke-seeder-cloudinit.template.yaml", {
     random_uuid   = random_uuid.random_cluster_id.result,
     hostname      = "rke2-server-1.${aws_route53_zone.main.name}"
     san           = local.rke_san
     taint_servers = var.taint_servers
+    cni           = var.cni
   })
   key_name = local.key_name
 
   root_block_device {
     delete_on_termination = "true"
     tags = {
-      Name        = "${var.environment}-server-1"
+      Name        = "rke-${var.environment}-server-1"
       Environment = "${var.environment}"
     }
     encrypted   = "false"
@@ -109,7 +110,7 @@ resource "aws_instance" "rke_seeder" {
   vpc_security_group_ids = [aws_security_group.default.id]
 
   tags = {
-    Name        = "${var.environment}-server-1"
+    Name        = "rke-${var.environment}-server-1"
     Environment = "${var.environment}"
   }
   iam_instance_profile = aws_iam_instance_profile.full_ec2_access_profile.name
@@ -218,12 +219,13 @@ resource "aws_instance" "rke_servers" {
   count         = var.rke_servers_count - 1
   ami           = var.ami_id
   instance_type = var.server_instance_type
-  user_data = templatefile("rke-server-cloudinit.template.yml", {
+  user_data = templatefile("templates/rke-server-cloudinit.template.yaml", {
     random_uuid   = random_uuid.random_cluster_id.result,
     seeder_url    = "https://${aws_instance.rke_seeder.private_ip}:9345",
     san           = local.rke_san
     hostname      = "rke2-server-${count.index + 2}.${aws_route53_zone.main.name}"
     taint_servers = var.taint_servers
+    cni           = var.cni
   })
 
   key_name             = local.key_name
@@ -232,7 +234,7 @@ resource "aws_instance" "rke_servers" {
   root_block_device {
     delete_on_termination = "true"
     tags = {
-      Name        = "${var.environment}-server-${count.index + 2}"
+      Name        = "rke-${var.environment}-server-${count.index + 2}"
       Environment = "${var.environment}"
     }
     encrypted   = "false"
@@ -243,7 +245,7 @@ resource "aws_instance" "rke_servers" {
   subnet_id              = aws_subnet.private_subnet.id
   vpc_security_group_ids = [aws_security_group.default.id]
   tags = {
-    Name        = "${var.environment}-server-${count.index + 2}"
+    Name        = "rke-${var.environment}-server-${count.index + 2}"
     Environment = "${var.environment}"
   }
 
@@ -324,7 +326,7 @@ resource "aws_instance" "rke_agents" {
   count         = var.rke_agents_count
   ami           = var.ami_id
   instance_type = var.agent_instance_type
-  user_data = templatefile("rke-agent-cloudinit.template.yml", {
+  user_data = templatefile("templates/rke-agent-cloudinit.template.yaml", {
     random_uuid = random_uuid.random_cluster_id.result,
     seeder_url  = "https://${aws_instance.rke_seeder.private_ip}:9345",
     san         = local.rke_san
@@ -337,7 +339,7 @@ resource "aws_instance" "rke_agents" {
   root_block_device {
     delete_on_termination = "true"
     tags = {
-      Name        = "${var.environment}-agent-${count.index + 1}"
+      Name        = "rke-${var.environment}-agent-${count.index + 1}"
       Environment = "${var.environment}"
     }
     encrypted   = "false"
@@ -348,7 +350,7 @@ resource "aws_instance" "rke_agents" {
   subnet_id              = aws_subnet.private_subnet.id
   vpc_security_group_ids = [aws_security_group.default.id]
   tags = {
-    Name        = "${var.environment}-agent-${count.index + 1}"
+    Name        = "rke-${var.environment}-agent-${count.index + 1}"
     Environment = "${var.environment}"
   }
 
@@ -459,26 +461,6 @@ resource "null_resource" "rke2-config" {
   }
 }
 
-output "rke_master_loadbalancer_dns" {
-  value = aws_lb.rke_master_lb.dns_name
-}
-
-output "rke_bastion_eip" {
-  value = aws_eip.bastion_eip.public_ip
-}
-
-output "rke_server_ips" {
-  value = concat([aws_instance.rke_seeder.private_ip], aws_instance.rke_servers[*].private_ip)
-}
-
-output "rke_agent_ips" {
-  value = aws_instance.rke_agents[*].private_ip
-}
-
-output "rke_config_filename" {
-  value = "kubeconfig.yaml"
-}
-
 resource "aws_route53_record" "rke-seeder" {
   zone_id = aws_route53_zone.main.zone_id
   name    = "rke2-server-1.${aws_route53_zone.main.name}"
@@ -506,7 +488,7 @@ resource "aws_route53_record" "rke-agents" {
 }
 
 resource "aws_lb_target_group" "rke-masters-target-group" {
-  name     = "${var.environment}-masters-tg"
+  name     = "rke-${var.environment}-masters-tg"
   port     = 6443
   protocol = "TCP"
   vpc_id   = aws_vpc.vpc.id
@@ -545,9 +527,9 @@ resource "aws_lb_target_group_attachment" "rke-master-tg-servers-attachment" {
 #   port              = 6443
 #   protocol          = "TCP"
 # }
-resource "null_resource" "helm_config" {
-  count  = "${var.bgp_enabled == true ? 1 : 0}"
-  depends_on = [aws_lb_target_group_attachment.rke-master-tg-servers-attachment]
+resource "null_resource" "calico_helm_config_seeder" {
+  count      = var.bgp_enabled == true ? 1 : 0
+  depends_on = [null_resource.wait-for-rke-seeder]
   connection {
     type                = "ssh"
     bastion_host        = aws_eip.bastion_eip.public_ip
@@ -558,22 +540,22 @@ resource "null_resource" "helm_config" {
     host                = aws_instance.rke_seeder.private_ip
   }
   provisioner "file" {
-    content = templatefile("rke2-calico-patch-config.template.yaml", {
-      bgp = "Enabled",
+    content = templatefile("templates/rke2-calico-config.template.yaml", {
+      bgp         = "Enabled",
       calico_cidr = "${var.calico-cidr}"
     })
-    destination = "/tmp/rke2-calico-patch.yaml"
+    destination = "/tmp/rke2-calico-config.yaml"
   }
 
   provisioner "remote-exec" {
     inline = [
-      "sudo cp /tmp/rke2-calico-patch.yaml /var/lib/rancher/rke2/server/manifests/rke2-calico-patch.yaml"
+      "sudo cp /tmp/rke2-calico-config.yaml /var/lib/rancher/rke2/server/manifests/rke2-calico-config.yaml"
     ]
   }
 }
-resource "null_resource" "helm_config" {
-  count  = "${var.bgp_enabled == true ? var.rke_servers_count - 1 : 0}"
-  depends_on = [aws_lb_target_group_attachment.rke-master-tg-servers-attachment]
+resource "null_resource" "calico_helm_config_servers" {
+  count      = var.bgp_enabled == true ? var.rke_servers_count - 1 : 0
+  depends_on = [null_resource.rke-servers-provisioner]
   connection {
     type                = "ssh"
     bastion_host        = aws_eip.bastion_eip.public_ip
@@ -584,16 +566,16 @@ resource "null_resource" "helm_config" {
     host                = aws_instance.rke_servers[count.index].private_ip
   }
   provisioner "file" {
-    content = templatefile("rke2-calico-patch-config.template.yaml", {
-      bgp = "Enabled",
+    content = templatefile("templates/rke2-calico-config.template.yaml", {
+      bgp         = "Enabled",
       calico_cidr = "${var.calico-cidr}"
     })
-    destination = "/tmp/rke2-calico-patch.yaml"
+    destination = "/tmp/rke2-calico-config.yaml"
   }
 
   provisioner "remote-exec" {
     inline = [
-      "sudo cp /tmp/rke2-calico-patch.yaml /var/lib/rancher/rke2/server/manifests/rke2-calico-patch.yaml"
+      "sudo cp /tmp/rke2-calico-config.yaml /var/lib/rancher/rke2/server/manifests/rke2-calico-config.yaml"
     ]
   }
 }

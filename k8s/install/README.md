@@ -71,11 +71,11 @@ In order to access the zCompute API the created nodes are assigned an instance p
 
 ### Running the installation
 
-1. Copy or rename `terraform.tfvars.template` to `terraform.tfvars` and provide all required variables inside it, make sure their value matches the ceritficate created above and the CentOS image selected.
+1. Copy or rename `terraform.template.tfvars` to `terraform.tfvars` and provide all required variables inside it, make sure their value matches the certificate created above and the CentOS image selected.
    The following parameters should be provided:
 
-   - `ssh_public_key_file` - This SSH public key will be installed on the K8S nodes
-   - `ssh_private_key_file` - This SSH private key will be used by the provisioning script to login in to the K8S nodes. It is not copied or moved
+   - `ssh_key_file_path` - This SSH private key will be used by the provisioning script to login in to the K8S nodes. It is not copied or moved
+   - `ssh_public_key_file_path` - This SSH public key will be installed on the K8S nodes
    - `zcompute_api_ip` - IP address or hostname of the zCompute API
    - `ami_id` - AMI ID Of a valid and accessible CentOS 7.8 Cloud image in zCompute
 
@@ -118,7 +118,7 @@ In order to access the zCompute API the created nodes are assigned an instance p
 3. Download the CA certificate bundle from one of the kubernetes nodes:
 
 ```sh
-scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${ssh_private_key_file} centos@${kubernetes-node-public-ip}:/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem ca-certificates.crt
+scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${ssh_key_file_path} centos@${kubernetes-node-public-ip}:/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem ca-certificates.crt
 ```
 
 ## Post Installation
@@ -126,5 +126,5 @@ scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${ssh_private
 Create a config map from the CA certificate bundle obtained from the terraform/step #3 under manual installation:
 
 ```sh
-kubectl -n kube-system create configmap --from-file=ca-certificates.crt symphony-ca-certificates-bundle
+kubectl -n kube-system create configmap --from-file=ca-certificates.crt zcompute-ca-certificates-bundle
 ```
