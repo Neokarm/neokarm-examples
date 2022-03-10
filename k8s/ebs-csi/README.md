@@ -96,20 +96,9 @@ If there are, delete them.
 
 ### 5. Install the modified helm chart with the additional changed values:
 
-Change the zcompute-host name to the actual API dns
+* Copy or rename `values.template.yaml` to `values.yaml` and replace `$ZCOMPUTE_HOSTNAME` with the zCompute cluster valid DNS.
 
-```yaml
-# aws-ebs-csi-driver/values.yaml
-controller:
-  env:
-    - name: AWS_EC2_ENDPOINT
-      value: 'https://${zcompute-hostname}/api/v2/aws/ec2'
-storageClasses:
-  - name: 'aws-sc'
-    annotations:
-      storageclass.kubernetes.io/is-default-class: 'true'
-```
-
-```sh
-helm -n kube-system -f aws-ebs-csi-driver/values.yaml install aws-ebs-csi-driver aws-ebs-csi-driver/
-```
+* Deploy `aws-ebs-csi-driver`
+  ```sh
+  helm upgrade --install aws-ebs-csi-driver aws-ebs-csi-driver/ -f values.yaml -n kube-system
+  ```

@@ -1,2 +1,3 @@
 aws-ebs-csi-driver/
 ca-certificates.crt
+values.yaml
