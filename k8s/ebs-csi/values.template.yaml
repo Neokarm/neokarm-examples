@@ -1,0 +1,9 @@
+# values.yaml
+controller:
+  env:
+    - name: AWS_EC2_ENDPOINT
+      value: 'https://$ZCOMPUTE_HOSTNAME/api/v2/aws/ec2'
+storageClasses:
+  - name: 'aws-sc'
+    annotations:
+      storageclass.kubernetes.io/is-default-class: 'true'
