@@ -50,10 +50,3 @@ kubectl edit ippool <ippoolname>
 ```
 > Important: Verify that all of the calico-node pods are restarting.
 - Calico is now properly configured to bgp!
-All that is left is to disable source/destination check on each instance
-```
-Compute -> Instances -> <instance> -> Networks -> Security Groups -> Source/Destination Check -> DISABLE THIS FLAG
-
-```
-![Alt text](screenshot.png?raw=true "")
-Node to Node networking is now expected to be restored
