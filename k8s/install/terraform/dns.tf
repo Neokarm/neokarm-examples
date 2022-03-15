@@ -55,11 +55,17 @@ resource "aws_route53_record" "ns" {
   records         = ["ns.${aws_route53_zone.main.name}."]
 }
 
+locals {
+  is_api_ip         = can(regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.zcompute_api)) ? true : false
+  zcompute_api_fqdn = local.is_api_ip ? "cloud.${var.zcloud_zone}" : var.zcompute_api
+}
+
 resource "aws_route53_record" "cluster" {
+  count           = local.is_api_ip ? 1 : 0
   zone_id         = aws_route53_zone.main.zone_id
   allow_overwrite = true
-  name            = var.zcloud_hostname
+  name            = local.zcompute_api_fqdn
   type            = "A"
-  records         = [var.zcompute_api_ip]
+  records         = [var.zcompute_api]
   ttl             = "300"
 }
