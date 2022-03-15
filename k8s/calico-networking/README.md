@@ -40,7 +40,7 @@ calicoctl get ippool -oyaml
 The IPPool should have
 ```
   ipipMode: Never
-  natOutgoing: false
+  natOutgoing: true
   nodeSelector: all()
   vxlanMode: Never
 ```
