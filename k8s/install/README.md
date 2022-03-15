@@ -76,7 +76,7 @@ In order to access the zCompute API the created nodes are assigned an instance p
 
    - `ssh_key_file_path` - This SSH private key will be used by the provisioning script to login in to the K8S nodes. It is not copied or moved
    - `ssh_public_key_file_path` - This SSH public key will be installed on the K8S nodes
-   - `zcompute_api_ip` - IP address or hostname of the zCompute API
+   - `zcompute_api` - IP address or hostname of the zCompute API
    - `ami_id` - AMI ID Of a valid and accessible CentOS 7.8 Cloud image in zCompute
 
    There are other parameters that can be modified, please consult with their description in `variables.tf` file.

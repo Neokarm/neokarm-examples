@@ -4,21 +4,13 @@ variable "environment" {
 }
 
 variable "zcloud_zone" {
-  description = "Domain of the zCompute cluster - {zcloud_hostname}.{zcloud_zone} should match the cluster certificate"
+  description = "Domain of the zCompute cluster - should match the cluster certificate"
   default     = "zadara.net"
 }
-variable "zcloud_hostname" {
-  description = "Hostname of the zCompute cluster - {zcloud_hostname} should match the cluster certificate"
-  default     = "cloud.zadara.net"
-}
-variable "zcompute_api_ip" {
-  type        = string
-  description = "IP of the zCompute cluster API endpoint"
 
-  validation {
-    condition     = can(regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.zcompute_api_ip))
-    error_message = "The zcompute_api_ip value must be a valid IP address."
-  }
+variable "zcompute_api" {
+  type        = string
+  description = "IP/DNS of the zCompute cluster API endpoint"
 }
 
 variable "ssh_public_key_file_path" {

@@ -123,8 +123,7 @@ resource "aws_instance" "rke_seeder" {
 resource "null_resource" "rke-seeder-provisioning" {
   depends_on = [aws_eip_association.rke_bastion_eip,
     aws_instance.rke_seeder,
-    aws_instance.rke_bastion,
-  aws_route53_record.cluster]
+    aws_instance.rke_bastion]
 
   connection {
     type                = "ssh"
@@ -151,7 +150,7 @@ resource "null_resource" "rke-seeder-provisioning" {
 
   provisioner "file" {
     content = templatefile("../../extra/disk-mapper/symphony_disk_mapper.template.py", {
-      symphony_ec2_endpoint = "https://${var.zcloud_hostname}/api/v2/aws/ec2"
+      symphony_ec2_endpoint = "https://${local.zcompute_api_fqdn}/api/v2/aws/ec2"
     })
     destination = "/tmp/symphony_disk_mapper.py"
   }
@@ -285,7 +284,7 @@ resource "null_resource" "rke-servers-provisioner" {
 
   provisioner "file" {
     content = templatefile("../../extra/disk-mapper/symphony_disk_mapper.template.py", {
-      symphony_ec2_endpoint = "https://${var.zcloud_hostname}/api/v2/aws/ec2"
+      symphony_ec2_endpoint = "https://${local.zcompute_api_fqdn}/api/v2/aws/ec2"
     })
     destination = "/tmp/symphony_disk_mapper.py"
   }
@@ -390,7 +389,7 @@ resource "null_resource" "rke-agents-provisioner" {
 
   provisioner "file" {
     content = templatefile("../../extra/disk-mapper/symphony_disk_mapper.template.py", {
-      symphony_ec2_endpoint = "https://${var.zcloud_hostname}/api/v2/aws/ec2"
+      symphony_ec2_endpoint = "https://${local.zcompute_api_fqdn}/api/v2/aws/ec2"
     })
     destination = "/tmp/symphony_disk_mapper.py"
   }
