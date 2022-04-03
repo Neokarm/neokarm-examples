@@ -17,8 +17,3 @@ output "rke_agent_ips" {
 output "rke_config_filename" {
   value = "kubeconfig.yaml"
 }
-
-output "zcompute_api_fqdn" {
-  value = local.zcompute_api_fqdn
-  description = "zCompute API DNS from inside the VPC"
-}
