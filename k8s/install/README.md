@@ -55,6 +55,10 @@ Ensure the following files are located in the certificates folder:
 ## Packer
 We are using packer to create an RKE2 image with all the dependencies.
 
+### Creating the image directly on zCompute
+This build will allow you to build the image directly on the zCompute system.
+It requires access to the zCompute API.
+ 
 1. Provision a bastion host with a keypair of your choice and attach an elastic IP to it.
 1. Copy or rename `.auto.pkrvars.template.hcl` to `.auto.pkrvars.hcl` and provide all required variables inside it. </br>
    The following parameters should be provided:
@@ -67,6 +71,21 @@ We are using packer to create an RKE2 image with all the dependencies.
    - `private_keypair_path` - This SSH private key will be used by packer script to login in to the bastion and builder instances.
 
    > There are other parameters that can be modified, please consult with their description in `variables.pkr.hcl` file.
+
+run the packer command using: `packer build -only=rke2-centos.amazon-ebs.centos [-var "name1=value1" [-var "name2=value2"]] .`
+
+### Creating the image using a local QEMU builder
+This build will allow you to build the image locally. 
+it require a local qemu installed on the machine building the image
+Copy or rename `.auto.pkrvars.template.hcl` to `.auto.pkrvars.hcl` and provide all required variables inside it. </br>
+The following parameters should be provided:
+
+   - `private_keypair_path` - SSH private key file to use when accessing the generated VM - 
+   the public key must have the same name with `.pub` suffix 
+   - `rke2_k8s_version` - Kubernetes version of the RKE2 distribution
+   - `rke2_revision` - RKE2 revision
+
+run the packer command using:`packer build -only=source.qemu.centos [-var "name1=value1" [-var "name2=value2"]] .`
 
 ## Terraform Installation
 
