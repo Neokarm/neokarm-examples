@@ -1,0 +1,15 @@
+#cloud-config
+write_files:
+  - path: /etc/rancher/rke2/config.yaml
+    owner: root:root
+    permissions: '0644'
+    content: |
+      selinux: true
+      token: ${ random_uuid }
+      server: ${ seeder_url }
+      %{~ for label in node_labels ~}
+      node-label:
+        - "${label}"
+      %{~ endfor ~}
+runcmd:
+  - [ sh, -xc, "INSTALL_RKE2_TYPE=agent /usr/bin/start_rke2_node.sh" ]
