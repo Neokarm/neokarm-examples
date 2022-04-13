@@ -1,0 +1,48 @@
+environment                        = ""
+
+primary_cluster_access_key         = ""
+primary_cluster_access_secret_id   = ""
+
+secondary_cluster_access_key       = ""
+secondary_cluster_access_secret_id = ""
+
+k8s_api_server_port                = 6443
+
+# primary zCompute cluster variables
+zcompute_api   = "" # zCompute API IP/Host address
+primary_vpc_id = "vpc-id"
+
+primary_private_subnets_ids = ["subnet-id"] # direct subnet
+primary_public_subnets_ids = ["subnet-id"] #
+
+primary_security_groups_ids = ["sg-id"]
+
+primary_k8s_ami_id = "ami-id"
+
+master_load_balancer_id           = ""
+master_load_balancer_public_ip    = ""
+master_load_balancer_private_ip   = ""
+master_load_balancer_internal_dns = ""
+
+# secondary zCompute cluster variables
+secondary_zcompute_api = "" # zCompute API IP/Host address
+
+secondary_private_subnets_ids = ["subnet-id"] # direct subnet
+
+secondary_security_groups_ids = ["sg-id"]
+
+secondary_k8s_ami_id = "ami-id"
+
+# RKE2 master nodes variables
+k8s_master_volume_size = "250"
+k8s_masters_count      = 3 # recommended
+master_key_pair        = "k8s-master"
+
+# RKE2 node configuration
+primary_worker_key_pair = "k8s-agent"
+k8s_worker_volume_size  = "250"
+
+primary_k8s_workers_count = 1
+
+secondary_worker_key_pair   = "k8s-agent"
+secondary_k8s_workers_count = 4

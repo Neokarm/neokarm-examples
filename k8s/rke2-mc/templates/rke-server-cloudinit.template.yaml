@@ -1,0 +1,25 @@
+#cloud-config
+write_files:
+  - path: /etc/rancher/rke2/config.yaml
+    owner: root:root
+    permissions: '0644'
+    content: |
+      write-kubeconfig-mode: "0644"
+      selinux: true 
+      cni: ${ cni }
+      token: ${ random_uuid }
+      server: ${ seeder_url }
+      tls-san:
+        %{~ for single_san in san ~}
+        - ${ single_san }
+        %{~ endfor ~}
+      %{~ if taint_servers ~}
+      node-taint:
+        - "CriticalAddonsOnly=true:NoExecute"
+      %{~ endif ~}
+      %{~ for label in node_labels ~}
+      node-label:
+        - ${label}
+      %{~ endfor ~}
+runcmd:
+  - [ sh, -xc, "INSTALL_RKE2_TYPE=server /usr/bin/start_rke2_node.sh" ]
