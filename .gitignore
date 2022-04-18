@@ -1,5 +1,0 @@
-/k8s/rke2-mc/terraform.auto.tfvars
-/k8s/rke2-mc/terraform.tfstate
-/k8s/rke2-mc/terraform.tfstate.backup
-/k8s/rke2-mc/.terraform.lock.hcl
-/k8s/rke2-mc/.terraform/
