@@ -1,10 +1,14 @@
-# Access key
+# zCompute cluster configuration
+zcompute_api = "cloud.zadara.net" # zCompute API IP/Host address
+
+# Access keys for the keypair
 ssh_key_file_path        = "~/.ssh/id_rsa"
 ssh_public_key_file_path = "~/.ssh/id_rsa.pub"
 
-# Importent! If the zcompute_api is IP, the domain should match the cluster certificate.
-zcompute_api = "cloud.zadara.net" # zCompute API IP/Host address
-# zcloud_zone = "zadara.net"
+# RKE2 node configuration
+rke2_ami_id   = "ami-b3f150f6f0734fce873d3149e5fe28f7"
+node_username = "centos"
 
-# An AMI that based on Centos 7.5 and above and available in the project
-ami_id = "ami-b3f150f6f0734fce873d3149e5fe28f7"
+# Bastion configuration
+bastion_ami_id   = "ami-c4dcb775e5ba45dda5a7f499955ce510"
+bastion_username = "centos"

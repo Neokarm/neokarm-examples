@@ -1,6 +1,7 @@
 # Installing Kubernetes on zCompute
 
 1. [Prerequisites](#prerequisites)
+2. [Packer](#packer)
 2. [Terraform](#terraform-installation) / [Manual](#manual-installation) Installation
 3. [Post Installation](#post-installation)
 
@@ -51,6 +52,22 @@ Ensure the following files are located in the certificates folder:
 - ca.crt
 - cluster.crt
 
+## Packer
+We are using packer to create an RKE2 image with all the dependencies.
+
+1. Provision a bastion host with a keypair of your choice and attach an elastic IP to it.
+1. Copy or rename `.auto.pkrvars.template.hcl` to `.auto.pkrvars.hcl` and provide all required variables inside it. </br>
+   The following parameters should be provided:
+
+   - `zcompute_api` - IP address or hostname of the zCompute API
+   - `ami_id` - AMI ID Of a valid and accessible CentOS 7.8 Cloud image in zCompute
+   - `ssh_username` - ssh username for the image
+   - `subnet_id` - Subnet ID to provision the builder in
+   - `ssh_keypair_name` - Keypair name to use for the builder
+   - `private_keypair_path` - This SSH private key will be used by packer script to login in to the bastion and builder instances.
+
+   > There are other parameters that can be modified, please consult with their description in `variables.pkr.hcl` file.
+
 ## Terraform Installation
 
 The provided terraform scripts are provided as an example only.
@@ -71,15 +88,18 @@ In order to access the zCompute API the created nodes are assigned an instance p
 
 ### Running the installation
 
-1. Copy or rename `terraform.template.tfvars` to `terraform.tfvars` and provide all required variables inside it, make sure their value matches the certificate created above and the CentOS image selected.
+1. Copy or rename `terraform.template.tfvars` to `terraform.tfvars` and provide all required variables inside it. </br>
    The following parameters should be provided:
 
    - `ssh_key_file_path` - This SSH private key will be used by the provisioning script to login in to the K8S nodes. It is not copied or moved
    - `ssh_public_key_file_path` - This SSH public key will be installed on the K8S nodes
    - `zcompute_api` - IP address or hostname of the zCompute API
-   - `ami_id` - AMI ID Of a valid and accessible CentOS 7.8 Cloud image in zCompute
+   - `rke2_ami_id` - The AMI ID of the packer image we created [here](#packer)
+   - `node_username` - ssh username for the packer image
+   - `bastion_ami_id` - AMI ID Of a valid and accessible linux image for the bastion in zCompute
+   - `bastion_username` - ssh username for the bastion image
 
-   There are other parameters that can be modified, please consult with their description in `variables.tf` file.
+   > There are other parameters that can be modified, please consult with their description in `variables.tf` file.
 
 2. Run `terraform init`
 3. Run `terraform apply`

@@ -3,11 +3,6 @@ variable "environment" {
   default     = "default"
 }
 
-variable "zcloud_zone" {
-  description = "Domain of the zCompute cluster - should match the cluster certificate"
-  default     = "zadara.net"
-}
-
 variable "zcompute_api" {
   type        = string
   description = "IP/DNS of the zCompute cluster API endpoint"
@@ -29,12 +24,12 @@ variable "rke_agents_count" {
   default = 3
 }
 
-variable "ami_id" {
+variable "rke2_ami_id" {
   description = "ID (in AWS format) of the AMI to be used for the kubernetes nodes"
 }
 
-variable "rke_version" {
-  default = "v1.21.5~rke2r1"
+variable "bastion_ami_id" {
+  description = "ID (in AWS format) of the AMI to be used for the bastion host"
 }
 
 variable "server_instance_type" {
@@ -54,15 +49,51 @@ variable "taint_servers" {
 }
 
 variable "cni" {
+  type        = string
   default     = "calico"
-  description = "cni options that rancher supports"
+  description = "CNI options that rancher supports"
+
+  validation {
+    condition     = contains(["calico", "canal", "flannel"], var.cni)
+    error_message = "Valid values for var: cni are (calico, canal, flannel)."
+  }
 }
+
 variable "bgp_enabled" {
   default     = false
   type        = bool
   description = "Activate Calico bgp piering"
 }
-variable "calico-cidr" {
+
+variable "calico_cidr" {
   default     = "10.42.0.0/16"
   description = "cidr for initial calico ippool"
+}
+
+variable "bastion_username" {
+  type        = string
+  description = "bastion user name for ssh"
+}
+
+variable "node_username" {
+  type        = string
+  description = "RKE2 node user name for ssh"
+}
+
+variable "bastion_instance_type" {
+  type        = string
+  default     = "t2.micro"
+  description = "The builder instance type"
+}
+
+variable "install_custom_ca_certificate" {
+  type        = bool
+  default     = false
+  description = "Use custom CA certificate in old linux release for the EBS driver"
+}
+
+variable "custom_ca_certificate_path" {
+  type        = string
+  default     = "ca.crt"
+  description = "Custom CA certificate file path"
 }

@@ -1,8 +1,8 @@
 resource "random_uuid" "random_cluster_id" {}
 
 resource "aws_instance" "rke_bastion" {
-  ami           = var.ami_id
-  instance_type = "t2.micro"
+  ami           = var.bastion_ami_id
+  instance_type = var.bastion_instance_type
   key_name      = local.key_name
 
   subnet_id              = aws_subnet.public_subnet.id
@@ -29,6 +29,9 @@ resource "aws_lb" "rke_master_lb" {
     Name        = "rke-${var.environment}-master-lb"
     Environment = "${var.environment}"
   }
+  lifecycle {
+    ignore_changes = [security_groups]
+  }
 }
 
 locals {
@@ -42,7 +45,7 @@ resource "null_resource" "lb_ip_getter" {
 
   connection {
     type        = "ssh"
-    user        = "centos"
+    user        = var.bastion_username
     private_key = file(local.private_key_file)
     host        = aws_eip.bastion_eip.public_ip
   }
@@ -60,7 +63,7 @@ resource "null_resource" "lb_ip_getter" {
   }
 
   provisioner "local-exec" {
-    command = "scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${local.private_key_file} centos@${aws_eip.bastion_eip.public_ip}:~/lb_ip.txt lb_ip.txt"
+    command = "scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${local.private_key_file} ${var.bastion_username}@${aws_eip.bastion_eip.public_ip}:~/lb_ip.txt lb_ip.txt"
   }
 
 }
@@ -85,7 +88,7 @@ locals {
 resource "aws_instance" "rke_seeder" {
   depends_on = [aws_lb.rke_master_lb, aws_route_table_association.private, aws_route.private_nat_gateway]
 
-  ami           = var.ami_id
+  ami           = var.rke2_ami_id
   key_name      = local.key_name
   instance_type = var.server_instance_type
 
@@ -95,8 +98,7 @@ resource "aws_instance" "rke_seeder" {
   source_dest_check      = var.bgp_enabled == true ? false : true
 
   user_data = templatefile("templates/rke-seeder-cloudinit.template.yaml", {
-    random_uuid   = random_uuid.random_cluster_id.result,
-    hostname      = "rke2-server-1.${aws_route53_zone.main.name}"
+    random_uuid   = random_uuid.random_cluster_id.result
     san           = local.rke_san
     taint_servers = var.taint_servers
     cni           = var.cni
@@ -120,104 +122,61 @@ resource "aws_instance" "rke_seeder" {
   }
 }
 
-resource "null_resource" "rke-seeder-provisioning" {
-  depends_on = [aws_eip_association.rke_bastion_eip,
-    aws_instance.rke_seeder,
-    aws_instance.rke_bastion]
+resource "null_resource" "ca_cert_seeder" {
+  depends_on = [aws_instance.rke_seeder,
+  aws_eip_association.rke_bastion_eip]
+  count = var.install_custom_ca_certificate ? 1 : 0
 
   connection {
     type                = "ssh"
     bastion_host        = aws_eip.bastion_eip.public_ip
-    bastion_user        = "centos"
+    bastion_user        = var.bastion_username
     bastion_private_key = file(local.private_key_file)
-    user                = "centos"
+    user                = var.node_username
     private_key         = file(local.private_key_file)
     host                = aws_instance.rke_seeder.private_ip
   }
 
-  provisioner "remote-exec" {
-    inline = [
-      "while [ ! -f /tmp/cloud-init-done ]; do echo Waiting for cloud-init to finish; sleep 1; done",
-      "sleep 30"
-    ]
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "sudo bash -c \"grep -qxF 'kubelet-arg:' /etc/rancher/rke2/config.yaml || echo 'kubelet-arg: provider-id=ec2://symphony/${aws_instance.rke_seeder.id}' >> /etc/rancher/rke2/config.yaml\""
-    ]
-  }
-
   provisioner "file" {
-    content = templatefile("../../extra/disk-mapper/symphony_disk_mapper.template.py", {
-      symphony_ec2_endpoint = "https://${local.zcompute_api_fqdn}/api/v2/aws/ec2"
-    })
-    destination = "/tmp/symphony_disk_mapper.py"
-  }
-
-  provisioner "file" {
-    source      = "../certificates/ca.crt"
-    destination = "/tmp/${aws_route53_zone.main.name}.ca.crt"
-  }
-
-  provisioner "file" {
-    source      = "../../extra/disk-mapper/symphony_disk_mapper.rules"
-    destination = "/tmp/symphony_disk_mapper.rules"
+    source      = var.custom_ca_certificate_path
+    destination = "/tmp/ca.crt"
   }
 
   provisioner "remote-exec" {
     inline = [
-      "sudo cp /tmp/symphony_disk_mapper.py /usr/bin/symphony_disk_mapper.py",
-      "sudo cp /tmp/${aws_route53_zone.main.name}.ca.crt /usr/share/pki/ca-trust-source/anchors/",
-      "sudo cp /tmp/symphony_disk_mapper.rules /etc/udev/rules.d/symphony_disk_mapper.rules",
-      "sudo chmod +x /usr/bin/symphony_disk_mapper.py",
+      "sudo cp /tmp/ca.crt /usr/share/pki/ca-trust-source/anchors/",
       "sudo update-ca-trust",
-      "echo RKE Seeder > /tmp/i_was_here",
-      "while [ ! -x /usr/bin/install-rke2.sh ]; do echo rke2 installer not ready; sleep 1; done"
-    ]
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "mkdir -p /home/centos/.ssh",
-      "[ -f /home/centos/.ssh/id_rsa ] || ssh-keygen -t rsa -b 4096 -f /home/centos/.ssh/id_rsa -q -N ''"
-    ]
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "sudo INSTALL_RKE2_VERSION=${var.rke_version} /usr/bin/install-rke2.sh",
-      "sudo systemctl enable rke2-server",
-      "sudo systemctl start rke2-server --no-block"
     ]
   }
 }
 
-resource "null_resource" "wait-for-rke-seeder" {
-  depends_on = [null_resource.rke-seeder-provisioning]
+resource "null_resource" "wait_for_rke_seeder" {
+  triggers = {
+    run = aws_instance.rke_seeder.private_ip
+  }
 
   connection {
     type                = "ssh"
     bastion_host        = aws_eip.bastion_eip.public_ip
-    bastion_user        = "centos"
+    bastion_user        = var.bastion_username
     bastion_private_key = file(local.private_key_file)
-    user                = "centos"
+    user                = var.node_username
     private_key         = file(local.private_key_file)
     host                = aws_instance.rke_seeder.private_ip
   }
 
   provisioner "remote-exec" {
     inline = [
-      "sudo /usr/bin/wait_for_rke.sh"
+      "sudo /usr/bin/wait_for_rke2_node.sh"
     ]
   }
 }
 
 resource "aws_instance" "rke_servers" {
-  depends_on = [aws_lb.rke_master_lb, aws_route_table_association.private, aws_route.private_nat_gateway, aws_instance.rke_seeder]
+  depends_on = [null_resource.wait_for_rke_seeder]
   count      = var.rke_servers_count - 1
 
-  ami           = var.ami_id
+  ami           = var.rke2_ami_id
   key_name      = local.key_name
   instance_type = var.server_instance_type
 
@@ -227,10 +186,9 @@ resource "aws_instance" "rke_servers" {
   source_dest_check      = var.bgp_enabled == true ? false : true
 
   user_data = templatefile("templates/rke-server-cloudinit.template.yaml", {
-    random_uuid   = random_uuid.random_cluster_id.result,
-    seeder_url    = "https://${aws_instance.rke_seeder.private_ip}:9345",
+    random_uuid   = random_uuid.random_cluster_id.result
+    seeder_url    = "https://${aws_instance.rke_seeder.private_ip}:9345"
     san           = local.rke_san
-    hostname      = "rke2-server-${count.index + 2}.${aws_route53_zone.main.name}"
     taint_servers = var.taint_servers
     cni           = var.cni
   })
@@ -253,78 +211,42 @@ resource "aws_instance" "rke_servers" {
   }
 }
 
-resource "null_resource" "rke-servers-provisioner" {
-  depends_on = [aws_instance.rke_servers, null_resource.wait-for-rke-seeder]
-  count      = var.rke_servers_count - 1
+resource "null_resource" "ca_cert_servers" {
+  depends_on = [aws_instance.rke_servers,
+  aws_eip_association.rke_bastion_eip]
+  count = var.install_custom_ca_certificate ? var.rke_servers_count - 1 : 0
+
   triggers = {
     run = aws_instance.rke_servers[count.index].id
   }
   connection {
     type                = "ssh"
     bastion_host        = aws_eip.bastion_eip.public_ip
-    bastion_user        = "centos"
+    bastion_user        = var.bastion_username
     bastion_private_key = file(local.private_key_file)
-    user                = "centos"
+    user                = var.node_username
     private_key         = file(local.private_key_file)
     host                = aws_instance.rke_servers[count.index].private_ip
   }
 
-  provisioner "remote-exec" {
-    inline = [
-      "while [ ! -f /tmp/cloud-init-done ]; do echo Waiting for cloud-init to finish; sleep 1; done",
-      "sleep 30"
-    ]
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "sudo bash -c \"grep -qxF 'kubelet-arg:' /etc/rancher/rke2/config.yaml || echo 'kubelet-arg: provider-id=ec2://symphony/${aws_instance.rke_servers[count.index].id}' >> /etc/rancher/rke2/config.yaml\""
-    ]
-  }
-
   provisioner "file" {
-    content = templatefile("../../extra/disk-mapper/symphony_disk_mapper.template.py", {
-      symphony_ec2_endpoint = "https://${local.zcompute_api_fqdn}/api/v2/aws/ec2"
-    })
-    destination = "/tmp/symphony_disk_mapper.py"
-  }
-
-  provisioner "file" {
-    source      = "../certificates/ca.crt"
-    destination = "/tmp/${aws_route53_zone.main.name}.ca.crt"
-  }
-
-  provisioner "file" {
-    source      = "../../extra/disk-mapper/symphony_disk_mapper.rules"
-    destination = "/tmp/symphony_disk_mapper.rules"
+    source      = var.custom_ca_certificate_path
+    destination = "/tmp/ca.crt"
   }
 
   provisioner "remote-exec" {
     inline = [
-      "sudo cp /tmp/symphony_disk_mapper.py /usr/bin/symphony_disk_mapper.py",
-      "sudo cp /tmp/${aws_route53_zone.main.name}.ca.crt /usr/share/pki/ca-trust-source/anchors/",
-      "sudo cp /tmp/symphony_disk_mapper.rules /etc/udev/rules.d/symphony_disk_mapper.rules",
-      "sudo chmod +x /usr/bin/symphony_disk_mapper.py",
+      "sudo cp /tmp/ca.crt /usr/share/pki/ca-trust-source/anchors/",
       "sudo update-ca-trust",
-      "echo RKE Seeder > /tmp/i_was_here",
-      "while [ ! -x /usr/bin/install-rke2.sh ]; do echo rke2 installer not ready; sleep 1; done"
-    ]
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "sudo INSTALL_RKE2_VERSION=${var.rke_version} /usr/bin/install-rke2.sh",
-      "sudo systemctl enable rke2-server",
-      "sudo systemctl start rke2-server --no-block"
     ]
   }
 }
 
 resource "aws_instance" "rke_agents" {
-  depends_on = [aws_lb.rke_master_lb, aws_route_table_association.private, aws_route.private_nat_gateway, aws_instance.rke_seeder]
+  depends_on = [null_resource.wait_for_rke_seeder]
   count      = var.rke_agents_count
 
-  ami           = var.ami_id
+  ami           = var.rke2_ami_id
   key_name      = local.key_name
   instance_type = var.agent_instance_type
 
@@ -334,10 +256,9 @@ resource "aws_instance" "rke_agents" {
   source_dest_check      = var.bgp_enabled == true ? false : true
 
   user_data = templatefile("templates/rke-agent-cloudinit.template.yaml", {
-    random_uuid = random_uuid.random_cluster_id.result,
-    seeder_url  = "https://${aws_instance.rke_seeder.private_ip}:9345",
-    san         = local.rke_san
-    hostname    = "rke2-agent-${count.index + 1}.${aws_route53_zone.main.name}"
+    random_uuid = random_uuid.random_cluster_id.result
+    seeder_url  = "https://${aws_instance.rke_seeder.private_ip}:9345"
+    cni         = var.cni
   })
   root_block_device {
     delete_on_termination = "true"
@@ -358,79 +279,43 @@ resource "aws_instance" "rke_agents" {
   }
 }
 
-resource "null_resource" "rke-agents-provisioner" {
-  depends_on = [aws_instance.rke_agents, null_resource.wait-for-rke-seeder]
-  count      = var.rke_agents_count
+resource "null_resource" "ca_cert_agents" {
+  depends_on = [aws_instance.rke_agents,
+  aws_eip_association.rke_bastion_eip]
+  count = var.install_custom_ca_certificate ? var.rke_agents_count : 0
+
   triggers = {
     run = aws_instance.rke_agents[count.index].id
   }
   connection {
     type                = "ssh"
     bastion_host        = aws_eip.bastion_eip.public_ip
-    bastion_user        = "centos"
+    bastion_user        = var.bastion_username
     bastion_private_key = file(local.private_key_file)
-    user                = "centos"
+    user                = var.node_username
     private_key         = file(local.private_key_file)
     host                = aws_instance.rke_agents[count.index].private_ip
   }
 
-  provisioner "remote-exec" {
-    inline = [
-      "while [ ! -f /tmp/cloud-init-done ]; do echo Waiting for cloud-init to finish; sleep 1; done",
-      "sleep 30"
-    ]
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "sudo bash -c \"grep -qxF 'kubelet-arg:' /etc/rancher/rke2/config.yaml || echo 'kubelet-arg: provider-id=ec2://symphony/${aws_instance.rke_agents[count.index].id}' >> /etc/rancher/rke2/config.yaml\""
-    ]
-  }
-
   provisioner "file" {
-    content = templatefile("../../extra/disk-mapper/symphony_disk_mapper.template.py", {
-      symphony_ec2_endpoint = "https://${local.zcompute_api_fqdn}/api/v2/aws/ec2"
-    })
-    destination = "/tmp/symphony_disk_mapper.py"
-  }
-
-  provisioner "file" {
-    source      = "../certificates/ca.crt"
-    destination = "/tmp/${aws_route53_zone.main.name}.ca.crt"
-  }
-
-  provisioner "file" {
-    source      = "../../extra/disk-mapper/symphony_disk_mapper.rules"
-    destination = "/tmp/symphony_disk_mapper.rules"
+    source      = var.custom_ca_certificate_path
+    destination = "/tmp/ca.crt"
   }
 
   provisioner "remote-exec" {
     inline = [
-      "sudo cp /tmp/symphony_disk_mapper.py /usr/bin/symphony_disk_mapper.py",
-      "sudo cp /tmp/${aws_route53_zone.main.name}.ca.crt /usr/share/pki/ca-trust-source/anchors/",
-      "sudo cp /tmp/symphony_disk_mapper.rules /etc/udev/rules.d/symphony_disk_mapper.rules",
-      "sudo chmod +x /usr/bin/symphony_disk_mapper.py",
+      "sudo cp /tmp/ca.crt /usr/share/pki/ca-trust-source/anchors/",
       "sudo update-ca-trust",
-      "echo RKE Seeder > /tmp/i_was_here",
-      "while [ ! -x /usr/bin/install-rke2.sh ]; do echo rke2 installer not ready; sleep 1; done"
-    ]
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "sudo INSTALL_RKE2_VERSION=${var.rke_version} INSTALL_RKE2_TYPE=agent /usr/bin/install-rke2.sh",
-      "sudo systemctl enable rke2-agent",
-      "sudo systemctl start rke2-agent --no-block"
     ]
   }
 }
 
-resource "null_resource" "rke2-config" {
-  depends_on = [null_resource.wait-for-rke-seeder]
+resource "null_resource" "rke2_config" {
+  depends_on = [null_resource.wait_for_rke_seeder]
 
   connection {
     type        = "ssh"
-    user        = "centos"
+    user        = var.bastion_username
     private_key = file(local.private_key_file)
     host        = aws_eip.bastion_eip.public_ip
   }
@@ -442,48 +327,22 @@ resource "null_resource" "rke2-config" {
     inline = [
       "chmod 600 ~/private_key",
       "rm -f ca-certificates.crt kubeconfig.yaml",
-      "scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/private_key centos@${aws_instance.rke_seeder.private_ip}:/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem ca-certificates.crt",
-      "scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/private_key centos@${aws_instance.rke_seeder.private_ip}:/etc/rancher/rke2/rke2.yaml kubeconfig.yaml",
+      "scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/private_key ${var.node_username}@${aws_instance.rke_seeder.private_ip}:/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem ca-certificates.crt",
+      "scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/private_key ${var.node_username}@${aws_instance.rke_seeder.private_ip}:/etc/rancher/rke2/rke2.yaml kubeconfig.yaml",
     ]
   }
   provisioner "local-exec" {
     command = "rm -f ca-certificates.crt kubeconfig.yaml"
   }
   provisioner "local-exec" {
-    command = "scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${local.private_key_file} centos@${aws_eip.bastion_eip.public_ip}:~/kubeconfig.yaml kubeconfig.yaml"
+    command = "scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${local.private_key_file} ${var.bastion_username}@${aws_eip.bastion_eip.public_ip}:~/kubeconfig.yaml kubeconfig.yaml"
   }
   provisioner "local-exec" {
-    command = "scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${local.private_key_file} centos@${aws_eip.bastion_eip.public_ip}:~/ca-certificates.crt ca-certificates.crt"
+    command = "scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${local.private_key_file} ${var.bastion_username}@${aws_eip.bastion_eip.public_ip}:~/ca-certificates.crt ca-certificates.crt"
   }
   provisioner "local-exec" {
     command = "sed -i 's#server:.*#server: https://${local.lb_public_ip}:6443/#' kubeconfig.yaml"
   }
-}
-
-resource "aws_route53_record" "rke-seeder" {
-  zone_id = aws_route53_zone.main.zone_id
-  name    = "rke2-server-1.${aws_route53_zone.main.name}"
-  type    = "A"
-  ttl     = "300"
-  records = [aws_instance.rke_seeder.private_ip]
-}
-
-resource "aws_route53_record" "rke-servers" {
-  count   = var.rke_servers_count - 1
-  zone_id = aws_route53_zone.main.zone_id
-  name    = "rke2-server-${count.index + 2}.${aws_route53_zone.main.name}"
-  type    = "A"
-  ttl     = "300"
-  records = [aws_instance.rke_servers[count.index].private_ip]
-}
-
-resource "aws_route53_record" "rke-agents" {
-  count   = var.rke_agents_count
-  zone_id = aws_route53_zone.main.zone_id
-  name    = "rke2-agent-${count.index + 1}.${aws_route53_zone.main.name}"
-  type    = "A"
-  ttl     = "300"
-  records = [aws_instance.rke_agents[count.index].private_ip]
 }
 
 resource "aws_lb_target_group" "rke-masters-target-group" {
@@ -528,20 +387,20 @@ resource "aws_lb_target_group_attachment" "rke-master-tg-servers-attachment" {
 # }
 resource "null_resource" "calico_helm_config_seeder" {
   count      = var.bgp_enabled == true ? 1 : 0
-  depends_on = [null_resource.wait-for-rke-seeder]
+  depends_on = [null_resource.wait_for_rke_seeder]
   connection {
     type                = "ssh"
     bastion_host        = aws_eip.bastion_eip.public_ip
-    bastion_user        = "centos"
+    bastion_user        = var.bastion_username
     bastion_private_key = file(local.private_key_file)
-    user                = "centos"
+    user                = var.node_username
     private_key         = file(local.private_key_file)
     host                = aws_instance.rke_seeder.private_ip
   }
   provisioner "file" {
     content = templatefile("templates/rke2-calico-config.template.yaml", {
       bgp         = "Enabled",
-      calico_cidr = "${var.calico-cidr}"
+      calico_cidr = "${var.calico_cidr}"
     })
     destination = "/tmp/rke2-calico-config.yaml"
   }
@@ -553,21 +412,23 @@ resource "null_resource" "calico_helm_config_seeder" {
   }
 }
 resource "null_resource" "calico_helm_config_servers" {
-  count      = var.bgp_enabled == true ? var.rke_servers_count - 1 : 0
-  depends_on = [null_resource.rke-servers-provisioner]
+  count = var.bgp_enabled == true ? var.rke_servers_count - 1 : 0
+  triggers = {
+    run = aws_instance.rke_servers[count.index].id
+  }
   connection {
     type                = "ssh"
     bastion_host        = aws_eip.bastion_eip.public_ip
-    bastion_user        = "centos"
+    bastion_user        = var.bastion_username
     bastion_private_key = file(local.private_key_file)
-    user                = "centos"
+    user                = var.node_username
     private_key         = file(local.private_key_file)
     host                = aws_instance.rke_servers[count.index].private_ip
   }
   provisioner "file" {
     content = templatefile("templates/rke2-calico-config.template.yaml", {
       bgp         = "Enabled",
-      calico_cidr = "${var.calico-cidr}"
+      calico_cidr = "${var.calico_cidr}"
     })
     destination = "/tmp/rke2-calico-config.yaml"
   }
