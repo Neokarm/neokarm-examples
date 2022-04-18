@@ -41,6 +41,20 @@ build {
     "source.amazon-ebs.centos"
   ]
 
+  ## cgroup centos 7 memory fix
+  provisioner "file" {
+    source      = "files/cgroup-memory-fix.sh"
+    destination = "/tmp/cgroup-memory-fix.sh"
+  }
+
+  provisioner "shell" {
+    inline = [
+      "sudo chmod +x /tmp/cgroup-memory-fix.sh",
+      "sudo /tmp/cgroup-memory-fix.sh",
+      "sudo grub2-mkconfig -o /etc/default/grub",
+    ]
+  }
+
   ## Disk mapper script for EBS csi driver
   provisioner "file" {
     content = templatefile("../../extra/disk-mapper/symphony_disk_mapper.template.py", {
