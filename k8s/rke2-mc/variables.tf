@@ -51,6 +51,11 @@ variable "k8s_worker_instance_type" {
   description = "K8s agent (worker) node instance type"
 }
 
+variable "secondary_k8s_worker_instance_type" {
+  default     = "z4.xlarge"
+  description = "K8s agent (worker) node instance type"
+}
+
 variable "taint_masters" {
   default     = true
   type        = bool

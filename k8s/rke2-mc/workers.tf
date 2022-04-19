@@ -34,10 +34,11 @@ module "workers_asg" {
 }
 
 module "secondary_workers_asg" {
+  count           = var.secondary_k8s_workers_count > 0 ? 1 : 0
   source          = "./modules/asg"
   group_name      = "${var.environment}-k8s-secondary-worker"
   image_id        = var.secondary_k8s_ami_id
-  instance_type   = var.k8s_worker_instance_type
+  instance_type   = var.secondary_k8s_worker_instance_type
   key_pair_name   = var.secondary_worker_key_pair
   rke_cni         = var.k8s_cni
   rke_master_url  = local.seeder_url
