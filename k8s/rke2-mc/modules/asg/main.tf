@@ -1,5 +1,4 @@
 resource "aws_launch_configuration" "rke" {
-  name            = var.group_name
   image_id        = var.image_id
   instance_type   = var.instance_type
   key_name        = var.key_pair_name
@@ -22,7 +21,8 @@ resource "aws_launch_configuration" "rke" {
   }
 
   lifecycle {
-    ignore_changes = [user_data, root_block_device, metadata_options, ebs_block_device]
+    ignore_changes        = [user_data, root_block_device, metadata_options, ebs_block_device]
+    create_before_destroy = true
   }
 }
 

@@ -11,6 +11,23 @@ resource "aws_lb_target_group" "kube_master" {
   }
 }
 
+resource "aws_lb_target_group" "kube_internal_master" {
+  name     = "${var.environment}-kube-internal-masters"
+  port     = 9345
+  protocol = "TCP"
+  vpc_id   = var.primary_vpc_id
+
+  stickiness {
+    type = "source_ip"
+  }
+
+  health_check {
+    protocol            = "TCP"
+    healthy_threshold   = 5
+    unhealthy_threshold = 5
+  }
+}
+
 resource "aws_lb_listener" "kube_master" {
   default_action {
     target_group_arn = aws_lb_target_group.kube_master.arn
@@ -19,6 +36,18 @@ resource "aws_lb_listener" "kube_master" {
 
   load_balancer_arn = var.master_load_balancer_id
   port              = var.k8s_api_server_port
+  protocol          = "TCP"
+}
+
+
+resource "aws_lb_listener" "kube_internal_master" {
+  default_action {
+    target_group_arn = aws_lb_target_group.kube_internal_master.arn
+    type             = "forward"
+  }
+
+  load_balancer_arn = var.master_load_balancer_id
+  port              = 9345
   protocol          = "TCP"
 }
 
@@ -33,7 +62,7 @@ data "aws_instance" "seeder" {
 
 locals {
   master_lb_hostname = var.master_load_balancer_internal_dns != "" ? split(".", var.master_load_balancer_internal_dns)[0] : ""
-  seeder_url         = "https://${data.aws_instance.seeder.private_ip}:9345"
+  seeder_url         = "https://${var.master_load_balancer_internal_dns}:9345"
 
   rke_san = [
     var.master_load_balancer_public_ip,
@@ -57,7 +86,7 @@ module "seeder_asg" {
   taint_servers      = var.taint_masters
   security_groups    = var.primary_security_groups_ids
   subnet_ids         = var.primary_private_subnets_ids
-  target_groups_arns = [aws_lb_target_group.kube_master.arn]
+  target_groups_arns = [aws_lb_target_group.kube_master.arn, aws_lb_target_group.kube_internal_master.arn]
   template_file      = "${path.module}/templates/rke-seeder-cloudinit.template.yaml"
   volume_size        = var.k8s_master_volume_size
 
@@ -90,7 +119,7 @@ module "servers_asg" {
   taint_servers      = var.taint_masters
   security_groups    = var.primary_security_groups_ids
   subnet_ids         = var.primary_private_subnets_ids
-  target_groups_arns = [aws_lb_target_group.kube_master.arn]
+  target_groups_arns = [aws_lb_target_group.kube_master.arn, aws_lb_target_group.kube_internal_master.arn]
   template_file      = "${path.module}/templates/rke-server-cloudinit.template.yaml"
   volume_size        = var.k8s_master_volume_size
 
