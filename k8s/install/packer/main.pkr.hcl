@@ -44,8 +44,8 @@ source "amazon-ebs" "centos" {
   }
 }
 
-local {
-  timestamp = timestamp()
+locals {
+  build_timestamp = timestamp()
 }
 
 source "qemu" "centos" {
@@ -64,7 +64,7 @@ source "qemu" "centos" {
   ssh_private_key_file = var.private_keypair_path
   ssh_username      = "centos"
   ssh_timeout       = "20m"
-  vm_name           = "centos-7.8-rke2-${var.rke2_k8s_version}-${var.rke2_revision}-${local.timestamp}.qcow2"
+  vm_name           = "centos-7.8-rke2-${var.rke2_k8s_version}-${var.rke2_revision}-${local.build_timestamp}.qcow2"
   net_device        = "virtio-net"
   disk_interface    = "virtio"
   boot_wait         = "10s"
@@ -112,10 +112,22 @@ build {
     pause_before = "20s"
   }
 
+
   # Install NVME root overlay and
+  provisioner "file" {
+    source      = "files/overlayroot/"
+    destination = "/tmp/"
+  }
+
   provisioner "shell" {
     inline = [
-      "sudo rpm -ivh https://github.com/gfleury/overlayroot/releases/download/v0.1/dracut-modules-overlayroot-0.2-beta.el7.noarch.rpm",
+      "mkdir -p /lib/dracut/modules.d/50overlayroot",
+      "cp /tmp/module-setup.sh /usr/lib/dracut/modules.d/50overlayroot/module-setup.sh",
+      "chmod 0755 /usr/lib/dracut/modules.d/50overlayroot/module-setup.sh",
+      "cp /tmp/mount-overlayroot.sh /usr/lib/dracut/modules.d/50overlayroot/mount-overlayroot.sh",
+      "chmod 0755 /usr/lib/dracut/modules.d/50overlayroot/mount-overlayroot.sh",
+      "cp /tmp/overlayroot-chroot /usr/sbin/overlayroot-chroot",
+      "chmod 0755 /usr/sbin/overlayroot-chroot",
       "echo overlayrootdevice=/dev/nvme0n1 | sudo tee /etc/overlayroot.conf > /dev/null",
       "sudo dracut -f /boot/initramfs-$(uname -r).img $(uname -r)",
     ]
