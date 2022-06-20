@@ -11,7 +11,6 @@ packer {
   }
 }
 
-
 source "amazon-ebs" "centos" {
   ami_name                     = "rke2-centos-{{timestamp}}"
   instance_type                = var.instance_type
@@ -29,6 +28,7 @@ source "amazon-ebs" "centos" {
   ssh_bastion_username         = var.ssh_bastion_username
   ssh_bastion_private_key_file = var.private_keypair_path
   ssh_keypair_name             = var.ssh_keypair_name
+  # security_group_ids           = ["sg-111111", "sg-222222"]
 
   tag {
     key   = "rke2-k8s-version"
@@ -44,6 +44,9 @@ source "amazon-ebs" "centos" {
   }
 }
 
+local {
+  timestamp = timestamp()
+}
 
 source "qemu" "centos" {
 
@@ -61,7 +64,7 @@ source "qemu" "centos" {
   ssh_private_key_file = var.private_keypair_path
   ssh_username      = "centos"
   ssh_timeout       = "20m"
-  vm_name           = "centos-7.8-rke2-${var.rke2_k8s_version}-${var.rke2_revision}.qcow2"
+  vm_name           = "centos-7.8-rke2-${var.rke2_k8s_version}-${var.rke2_revision}-${local.timestamp}.qcow2"
   net_device        = "virtio-net"
   disk_interface    = "virtio"
   boot_wait         = "10s"
@@ -84,6 +87,38 @@ build {
   provisioner "file" {
     source      = "files/cgroup-memory-fix.sh"
     destination = "/tmp/cgroup-memory-fix.sh"
+  }
+
+  ## cgroup centos 7 memory fix
+  provisioner "file" {
+    source      = "files/update_packages.sh"
+    destination = "/tmp/update_packages.sh"
+  }
+
+  provisioner "shell" {
+    inline = [
+      "sudo chmod +x /tmp/update_packages.sh",
+      "sudo /tmp/update_packages.sh",
+    ]
+  }
+
+  # reboot
+  provisioner "shell" {
+    inline = [
+      "sudo reboot",
+    ]
+    expect_disconnect = true
+    pause_after = "20s"
+    pause_before = "20s"
+  }
+
+  # Install NVME root overlay and
+  provisioner "shell" {
+    inline = [
+      "sudo rpm -ivh https://github.com/gfleury/overlayroot/releases/download/v0.1/dracut-modules-overlayroot-0.2-beta.el7.noarch.rpm",
+      "echo overlayrootdevice=/dev/nvme0n1 | sudo tee /etc/overlayroot.conf > /dev/null",
+      "sudo dracut -f /boot/initramfs-$(uname -r).img $(uname -r)",
+    ]
   }
 
   provisioner "shell" {
