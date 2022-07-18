@@ -7,9 +7,11 @@ write_files:
       selinux: true
       token: ${ random_uuid }
       server: ${ seeder_url }
-      %{~ for label in node_labels ~}
+      %{~ if length(node_labels) > 0 ~}
       node-label:
+      %{~ for label in node_labels ~}
         - "${label}"
       %{~ endfor ~}
+      %{~ endif ~}
 runcmd:
   - [ sh, -xc, "INSTALL_RKE2_TYPE=agent /usr/bin/start_rke2_node.sh" ]
