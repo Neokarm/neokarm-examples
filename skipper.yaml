@@ -1,0 +1,10 @@
+registry: rackattack-nas.dc1:5000
+build-container-image: build
+volumes:
+- /tmp:/tmp:rw
+- ${HOME}/.sonar:/tmp/.sonar:rw
+- ${HOME}/.netrc:/root/.netrc
+
+env:
+  SONAR_USER_HOME: /tmp/.sonar
+  PULL_REQUEST_ID: ${GIT_BRANCH}
